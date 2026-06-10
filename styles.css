@@ -2502,7 +2502,8 @@ h1 {
 
 @media (max-width: 520px) {
   .topbar-cta {
-    display: none;
+    padding: 9px 14px;
+    font-size: 13px;
   }
 }
 
@@ -2883,5 +2884,69 @@ html {
     width: 100%;
     min-height: 82px;
     animation: none;
+  }
+}
+
+/* Mobile refinements */
+@media (max-width: 560px) {
+  .hero-pipeline li + li {
+    margin-left: 0;
+  }
+
+  .hero-pipeline li + li::before {
+    content: none;
+  }
+
+  .artist-wall {
+    min-height: 0;
+    display: grid;
+    gap: 30px;
+    justify-items: center;
+    padding: 14px 0 8px;
+  }
+
+  .artist-frame,
+  .frame-dave,
+  .frame-central,
+  .frame-stormzy {
+    position: static;
+    width: min(300px, 84vw);
+    transform: rotate(var(--r));
+  }
+
+  .artist-frame:hover,
+  .frame-dave:hover {
+    transform: rotate(var(--r)) translateY(-10px) scale(1.03);
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+
+  .hero-actions .primary-action {
+    flex: 1;
+  }
+
+  .scores-section,
+  .closing-section {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .closing-card {
+    padding: 34px 22px;
+  }
+
+  .closing-card h2 {
+    font-size: clamp(34px, 10vw, 44px);
+  }
+
+  .score-overall {
+    padding: 28px 22px;
+  }
+
+  .site-footer {
+    gap: 12px;
+    text-align: center;
   }
 }
