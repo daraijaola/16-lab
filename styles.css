@@ -1439,15 +1439,16 @@ h1 {
 
 @media (max-width: 920px) {
   .demo-cursor,
-  .cursor-pulse,
-  .search-loading {
+  .cursor-pulse {
     display: none;
   }
 
+  .search-loading {
+    margin-top: 12px;
+  }
+
   .track-result {
-    opacity: 1;
-    transform: none;
-    animation: none;
+    margin-top: 14px;
   }
 
   .topbar {
