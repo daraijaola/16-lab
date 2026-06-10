@@ -100,16 +100,22 @@ a {
 }
 
 .brand img {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   display: block;
 }
 
 .brand span {
-  font-size: 22px;
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 26px;
   line-height: 1;
-  font-weight: 800;
-  letter-spacing: 0;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+}
+
+.brand span strong {
+  font-weight: 700;
+  color: var(--orange);
 }
 
 .site-shell > section {
@@ -2855,15 +2861,22 @@ h1 {
 }
 
 .footer-brand img {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   display: block;
   filter: invert(1);
 }
 
 .footer-brand span {
-  font-size: 18px;
-  font-weight: 800;
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+}
+
+.footer-brand span strong {
+  font-weight: 700;
+  color: var(--orange);
 }
 
 .site-footer p {
