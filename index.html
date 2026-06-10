@@ -4,6 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>16 Lab - Decode every bar</title>
+    <meta
+      name="description"
+      content="16 Lab is a rap intelligence lab. Upload a freestyle or search any released track, get accurate lyrics, tap any bar for meaning and wordplay, and see technical scores."
+    />
+    <meta property="og:title" content="16 Lab - Decode every bar" />
+    <meta
+      property="og:description"
+      content="Lyrics, meaning, wordplay, and technical scores for rap - including freestyles no lyrics platform covers."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -13,19 +24,37 @@
           <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
           <span>16Lab</span>
         </div>
+
+        <nav class="topbar-nav" aria-label="Section navigation">
+          <a href="#artists">Artists</a>
+          <a href="#analyze">Analyze</a>
+          <a href="#decode">Decode</a>
+          <a href="#scores">Scores</a>
+          <a href="#stack">Stack</a>
+        </nav>
+
+        <a class="topbar-cta" href="#analyze">Enter lab</a>
       </header>
 
       <section class="hero" aria-label="16 Lab introduction">
         <div class="hero-copy">
-          <p class="tagline">Decode every bar.</p>
+          <span class="hero-kicker">Rap intelligence lab</span>
+          <h1 class="tagline">Decode <span class="tagline-accent">every</span> bar.</h1>
           <p class="summary">
-            Transcribe, explain, score, and compare rap lyrics from tracks,
-            freestyles, and clips.
+            Upload a freestyle or search any released track. Get accurate
+            lyrics, the meaning behind every bar, and a technical score &mdash;
+            even for bars no lyrics platform covers.
           </p>
 
+          <ul class="hero-pipeline" aria-label="How it works">
+            <li>Isolate vocals</li>
+            <li>Transcribe</li>
+            <li>Decode the bars</li>
+          </ul>
+
           <div class="hero-actions" aria-label="Primary actions">
-            <a class="primary-action" href="#preview">Enter lab</a>
-            <a class="icon-action" href="#preview" aria-label="Open preview">
+            <a class="primary-action" href="#analyze">Enter lab</a>
+            <a class="icon-action" href="#analyze" aria-label="Open analyze section">
               <span aria-hidden="true">&#8599;</span>
             </a>
           </div>
@@ -110,7 +139,7 @@
         </div>
       </section>
 
-      <section class="artists-section" aria-label="Featured artists">
+      <section class="artists-section" id="artists" aria-label="Featured artists">
         <div class="artists-copy">
           <h2>Your favorite artists, decoded.</h2>
           <p>
@@ -149,7 +178,7 @@
         </div>
       </section>
 
-      <section class="upload-flow-section" aria-label="Search or upload">
+      <section class="upload-flow-section" id="analyze" aria-label="Search or upload">
         <div class="demo-copy">
           <div class="headline-box">
             <h2>
@@ -226,7 +255,7 @@
         </div>
       </section>
 
-      <section class="lyrics-demo" aria-label="Lyrics decode demo">
+      <section class="lyrics-demo" id="decode" aria-label="Lyrics decode demo">
         <div class="decode-copy">
           <span class="section-kicker">Lyrics intelligence</span>
           <h2>Tap the bar. Get the weight behind it.</h2>
@@ -298,7 +327,61 @@
         </div>
       </section>
 
-      <section class="powered-section" aria-label="Powered by integrations">
+      <section class="scores-section" id="scores" aria-label="Lyrical scoring engine">
+        <div class="scores-copy">
+          <span class="section-kicker">Scoring engine</span>
+          <h2>Pen game, measured.</h2>
+          <p>
+            Repeatable technical metrics per track &mdash; not vibes. Rhyme
+            schemes, vocabulary, and flow, quantified into one score.
+          </p>
+        </div>
+
+        <div class="score-board" aria-label="Example track metrics">
+          <div class="score-overall">
+            <span class="score-overall-label">Overall score</span>
+            <strong>87</strong>
+            <span class="score-overall-scale">/ 100</span>
+          </div>
+
+          <ul class="score-metrics">
+            <li>
+              <div class="metric-head">
+                <span>Rhyme density</span>
+                <strong>9.1</strong>
+              </div>
+              <div class="metric-rail"><span style="--w: 91%"></span></div>
+              <p>Internal and end rhymes per line</p>
+            </li>
+            <li>
+              <div class="metric-head">
+                <span>Vocabulary richness</span>
+                <strong>8.4</strong>
+              </div>
+              <div class="metric-rail"><span style="--w: 84%"></span></div>
+              <p>Unique words across the track</p>
+            </li>
+            <li>
+              <div class="metric-head">
+                <span>Multisyllabic rhymes</span>
+                <strong>7.8</strong>
+              </div>
+              <div class="metric-rail metric-rail-blue"><span style="--w: 78%"></span></div>
+              <p>Rhyme spans with 3+ syllables</p>
+            </li>
+            <li>
+              <div class="metric-head">
+                <span>Flow variance</span>
+                <strong>8.9</strong>
+              </div>
+              <div class="metric-rail metric-rail-blue"><span style="--w: 89%"></span></div>
+              <p>Cadence changes across bars</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="powered-section" id="stack" aria-label="Powered by integrations">
         <div class="powered-copy">
           <span class="section-kicker">Powered by</span>
           <h2>The stack behind the lab.</h2>
@@ -326,6 +409,30 @@
           </article>
         </div>
       </section>
+
+      <section class="closing-section" aria-label="Call to action">
+        <div class="closing-card">
+          <h2>Bars nobody has written down yet.<br />Until now.</h2>
+          <p>
+            Built for the Musicathon by Musixmatch Pro
+          </p>
+          <div class="hero-actions" aria-label="Closing actions">
+            <a class="primary-action" href="#analyze">Enter lab</a>
+            <a class="icon-action" href="#analyze" aria-label="Open analyze section">
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer class="site-footer" aria-label="Site footer">
+        <div class="footer-brand">
+          <img src="./assets/16-lab-logo.svg" alt="" />
+          <span>16Lab</span>
+        </div>
+        <p>Decode every bar.</p>
+        <span class="footer-note">&copy; 2026 16 Lab</span>
+      </footer>
     </main>
   </body>
 </html>
