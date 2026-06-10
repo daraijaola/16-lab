@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>16 Lab - Lyrics Decode Demo</title>
+    <link rel="stylesheet" href="./lyrics-demo.css" />
+  </head>
+  <body>
+    <main class="lyrics-page">
+      <header class="demo-nav">
+        <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
+      </header>
+
+      <section class="lyrics-demo" aria-label="Lyrics decode demo">
+        <div class="decode-copy">
+          <span class="section-kicker">Lyrics intelligence</span>
+          <h1>Tap the bar. Get the weight behind it.</h1>
+        </div>
+
+        <div class="bar-lab" aria-label="Animated lyric analysis">
+          <article class="lyric-sheet" aria-label="Black by Dave lyric excerpt">
+            <div class="sheet-head">
+              <img src="./assets/16-lab-logo.svg" alt="" />
+              <div>
+                <strong>Black</strong>
+                <span>Dave</span>
+              </div>
+            </div>
+
+            <div class="lyric-window">
+              <div class="lyric-track">
+                <p class="context-line">The blacker the berry the sweeter the juice</p>
+                <button class="target-bar" type="button">
+                  <span>A kid dies, the blacker the killer,</span>
+                  <strong>the sweeter the news</strong>
+                </button>
+                <p>And if he's white you give him a chance</p>
+                <p>He's ill and confused</p>
+                <p>If he's black he's probably armed</p>
+                <p>You see him and shoot</p>
+                <p class="muted-line">Look, black is growin' up around the barbershop</p>
+              </div>
+            </div>
+
+            <div class="bar-action" aria-hidden="true">
+              <img src="./assets/16-lab-logo.svg" alt="" />
+              <span>Decode bar</span>
+            </div>
+
+            <div class="lyrics-cursor" aria-hidden="true">
+              <span class="cursor-pulse"></span>
+              <svg viewBox="0 0 64 64">
+                <path class="cursor-shell" d="M10 5L53 35L35 40L25 58L10 5Z" />
+                <path class="cursor-glint" d="M17 15L42 33L31 36L24 49L17 15Z" />
+              </svg>
+            </div>
+          </article>
+
+          <article class="decode-card" aria-label="16 Lab lyric decode">
+            <div class="decode-head">
+              <img src="./assets/16-lab-logo.svg" alt="" />
+              <span>16 Lab decode</span>
+            </div>
+
+            <div class="decode-body">
+              <div class="meaning-block">
+                <span class="decode-label">Meaning</span>
+                <p>
+                  Dave flips "the blacker the berry" into a line about media
+                  bias. A Black killer makes the tragedy feel more clickable,
+                  while whiteness gets softened into excuses like illness or
+                  confusion.
+                </p>
+              </div>
+
+              <div class="context-grid">
+                <span>Race</span>
+                <span>media framing</span>
+                <span>public sympathy</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

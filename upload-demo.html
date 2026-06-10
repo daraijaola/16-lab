@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>16 Lab - Upload/Search Demo</title>
+    <link rel="stylesheet" href="./upload-demo.css" />
+  </head>
+  <body>
+    <main class="upload-page">
+      <header class="demo-nav">
+        <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
+      </header>
+
+      <section class="demo-hero" aria-label="Upload or search">
+        <div class="demo-copy">
+          <div class="headline-box">
+            <h1>
+              <span class="headline-chip search-chip">Search</span> a track.
+              <span class="headline-chip upload-chip">Upload</span> a freestyle.
+            </h1>
+          </div>
+        </div>
+
+        <div class="input-lab">
+          <article class="search-panel" aria-label="Search track">
+            <div class="panel-head">
+              <strong>Find a song</strong>
+            </div>
+
+            <label class="search-box">
+              <span>Track or artist</span>
+              <div class="search-field">
+                <div class="typed-search" aria-label="Search track">
+                  <span>Dave - Starlight</span>
+                </div>
+                <button type="button">Search</button>
+              </div>
+            </label>
+
+            <div class="search-loading" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <article class="track-result" aria-label="Dave Starlight result">
+              <img src="./assets/tracks/starlight-cover.jpg" alt="Starlight cover art" />
+              <div class="track-info">
+                <span class="result-label">Top match</span>
+                <strong>Starlight</strong>
+                <p>Dave · single</p>
+                <div class="scan-state">
+                  <span></span>
+                  <small>preparing scan</small>
+                </div>
+              </div>
+              <button type="button" aria-label="Select Starlight">
+                <span></span>
+              </button>
+            </article>
+
+            <div class="demo-cursor" aria-hidden="true">
+              <span class="cursor-pulse"></span>
+              <svg viewBox="0 0 64 64">
+                <path class="cursor-shell" d="M10 5L53 35L35 40L25 58L10 5Z" />
+                <path class="cursor-glint" d="M17 15L42 33L31 36L24 49L17 15Z" />
+              </svg>
+            </div>
+          </article>
+
+          <article class="upload-panel" aria-label="Upload audio">
+            <div class="panel-head">
+              <strong>Drop audio</strong>
+            </div>
+
+            <div class="dropzone" role="button" tabindex="0">
+              <div class="upload-icon">
+                <span>MP4</span>
+              </div>
+              <strong>Drag audio here</strong>
+              <p>MP3, WAV, M4A, or WEBM</p>
+            </div>
+
+            <div class="upload-meter" aria-hidden="true">
+              <span></span>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

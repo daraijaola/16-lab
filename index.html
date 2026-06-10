@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>16 Lab - Decode every bar</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="site-shell">
+      <header class="topbar" aria-label="Site header">
+        <div class="brand">
+          <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
+          <span>16Lab</span>
+        </div>
+      </header>
+
+      <section class="hero" aria-label="16 Lab introduction">
+        <div class="hero-copy">
+          <p class="tagline">Decode every bar.</p>
+          <p class="summary">
+            Transcribe, explain, score, and compare rap lyrics from tracks,
+            freestyles, and clips.
+          </p>
+
+          <div class="hero-actions" aria-label="Primary actions">
+            <a class="primary-action" href="#preview">Enter lab</a>
+            <a class="icon-action" href="#preview" aria-label="Open preview">
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-art" id="preview" aria-label="16 Lab visual preview">
+          <div class="art-stage">
+            <article class="audio-card" aria-label="Audio analysis preview">
+              <div class="audio-card-top">
+                <div>
+                  <span class="audio-kicker">Track take</span>
+                  <strong>Verse scan</strong>
+                </div>
+                <button class="play-button" aria-label="Play preview">
+                  <span></span>
+                </button>
+              </div>
+
+              <div class="waveform" aria-hidden="true">
+                <span style="--h: 28%"></span>
+                <span style="--h: 54%"></span>
+                <span style="--h: 38%"></span>
+                <span style="--h: 76%"></span>
+                <span style="--h: 46%"></span>
+                <span style="--h: 92%"></span>
+                <span style="--h: 58%"></span>
+                <span style="--h: 36%"></span>
+                <span style="--h: 84%"></span>
+                <span style="--h: 44%"></span>
+                <span style="--h: 66%"></span>
+                <span style="--h: 32%"></span>
+                <span style="--h: 88%"></span>
+                <span style="--h: 52%"></span>
+                <span style="--h: 72%"></span>
+                <span style="--h: 40%"></span>
+                <span style="--h: 64%"></span>
+                <span style="--h: 30%"></span>
+              </div>
+
+              <div class="progress-rail" aria-hidden="true">
+                <span></span>
+              </div>
+
+              <div class="audio-card-bottom">
+                <span>00:16</span>
+                <span>voice isolated</span>
+              </div>
+            </article>
+
+            <div class="mic-figure" aria-hidden="true">
+              <div class="mic-head">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="mic-neck"></div>
+              <div class="mic-base"></div>
+            </div>
+
+            <div class="vinyl-disc" aria-hidden="true">
+              <span></span>
+            </div>
+            <div class="stage-mic" aria-hidden="true">
+              <span class="stage-mic-grille"></span>
+              <span class="stage-mic-band"></span>
+              <span class="stage-mic-handle"></span>
+              <span class="stage-mic-cable"></span>
+            </div>
+            <div class="mpc-pad" aria-hidden="true">
+              <div class="mpc-screen"></div>
+              <div class="mpc-knobs">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mpc-grid">
+                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="artists-section" aria-label="Featured artists">
+        <div class="artists-copy">
+          <h2>Your favorite artists, decoded.</h2>
+          <p>
+            Start with the voices you already know. 16 Lab turns their lyrics
+            into meaning, wordplay, references, and technical scores.
+          </p>
+        </div>
+
+        <div class="artist-wall">
+          <article class="artist-frame frame-dave">
+            <div class="portrait-wrap">
+              <img src="./assets/artists/dave.png" alt="Dave portrait" />
+            </div>
+            <div class="artist-meta">
+              <strong>Dave</strong>
+            </div>
+          </article>
+
+          <article class="artist-frame frame-central">
+            <div class="portrait-wrap">
+              <img src="./assets/artists/central-cee.png" alt="Central Cee portrait" />
+            </div>
+            <div class="artist-meta">
+              <strong>Central Cee</strong>
+            </div>
+          </article>
+
+          <article class="artist-frame frame-stormzy">
+            <div class="portrait-wrap">
+              <img src="./assets/artists/stormzy.png" alt="Stormzy portrait" />
+            </div>
+            <div class="artist-meta">
+              <strong>Stormzy</strong>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="upload-flow-section" aria-label="Search or upload">
+        <div class="demo-copy">
+          <div class="headline-box">
+            <h2>
+              <span class="headline-chip search-chip">Search</span> a track.
+              <span class="headline-chip upload-chip">Upload</span> a freestyle.
+            </h2>
+          </div>
+        </div>
+
+        <div class="input-lab">
+          <article class="search-panel" aria-label="Search track">
+            <div class="panel-head">
+              <strong>Find a song</strong>
+            </div>
+
+            <label class="search-box">
+              <span>Track or artist</span>
+              <div class="search-field">
+                <div class="typed-search" aria-label="Search track">
+                  <span>Dave - Starlight</span>
+                </div>
+                <button type="button">Search</button>
+              </div>
+            </label>
+
+            <div class="search-loading" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <article class="track-result" aria-label="Dave Starlight result">
+              <img src="./assets/tracks/starlight-cover.jpg" alt="Starlight cover art" />
+              <div class="track-info">
+                <span class="result-label">Top match</span>
+                <strong>Starlight</strong>
+                <p>Dave · single</p>
+                <div class="scan-state">
+                  <span></span>
+                  <small>preparing scan</small>
+                </div>
+              </div>
+              <button type="button" aria-label="Select Starlight">
+                <span></span>
+              </button>
+            </article>
+
+            <div class="demo-cursor" aria-hidden="true">
+              <span class="cursor-pulse"></span>
+              <svg viewBox="0 0 64 64">
+                <path class="cursor-shell" d="M10 5L53 35L35 40L25 58L10 5Z" />
+                <path class="cursor-glint" d="M17 15L42 33L31 36L24 49L17 15Z" />
+              </svg>
+            </div>
+          </article>
+
+          <article class="upload-panel" aria-label="Upload audio">
+            <div class="panel-head">
+              <strong>Drop audio</strong>
+            </div>
+
+            <div class="dropzone" role="button" tabindex="0">
+              <div class="upload-icon">
+                <span>MP4</span>
+              </div>
+              <strong>Drag audio here</strong>
+              <p>MP3, WAV, M4A, or WEBM</p>
+            </div>
+
+            <div class="upload-meter" aria-hidden="true">
+              <span></span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="lyrics-demo" aria-label="Lyrics decode demo">
+        <div class="decode-copy">
+          <span class="section-kicker">Lyrics intelligence</span>
+          <h2>Tap the bar. Get the weight behind it.</h2>
+        </div>
+
+        <div class="bar-lab" aria-label="Animated lyric analysis">
+          <article class="lyric-sheet" aria-label="Black by Dave lyric excerpt">
+            <div class="sheet-head">
+              <img src="./assets/16-lab-logo.svg" alt="" />
+              <div>
+                <strong>Black</strong>
+                <span>Dave</span>
+              </div>
+            </div>
+
+            <div class="lyric-window">
+              <div class="lyric-track">
+                <p class="context-line">The blacker the berry the sweeter the juice</p>
+                <button class="target-bar" type="button">
+                  <span>A kid dies, the blacker the killer,</span>
+                  <strong>the sweeter the news</strong>
+                </button>
+                <p>And if he's white you give him a chance</p>
+                <p>He's ill and confused</p>
+                <p>If he's black he's probably armed</p>
+                <p>You see him and shoot</p>
+                <p class="muted-line">Look, black is growin' up around the barbershop</p>
+              </div>
+            </div>
+
+            <div class="bar-action" aria-hidden="true">
+              <img src="./assets/16-lab-logo.svg" alt="" />
+              <span>Decode bar</span>
+            </div>
+
+            <div class="lyrics-cursor" aria-hidden="true">
+              <span class="lyric-cursor-pulse"></span>
+              <svg viewBox="0 0 64 64">
+                <path class="lyric-cursor-shell" d="M10 5L53 35L35 40L25 58L10 5Z" />
+                <path class="lyric-cursor-glint" d="M17 15L42 33L31 36L24 49L17 15Z" />
+              </svg>
+            </div>
+          </article>
+
+          <article class="decode-card" aria-label="16 Lab lyric decode">
+            <div class="decode-head">
+              <img src="./assets/16-lab-logo.svg" alt="" />
+              <span>16 Lab decode</span>
+            </div>
+
+            <div class="decode-body">
+              <div class="meaning-block">
+                <span class="decode-label">Meaning</span>
+                <p>
+                  Dave flips "the blacker the berry" into a line about media
+                  bias. A Black killer makes the tragedy feel more clickable,
+                  while whiteness gets softened into excuses like illness or
+                  confusion.
+                </p>
+              </div>
+
+              <div class="context-grid">
+                <span>Race</span>
+                <span>media framing</span>
+                <span>public sympathy</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="powered-section" aria-label="Powered by integrations">
+        <div class="powered-copy">
+          <span class="section-kicker">Powered by</span>
+          <h2>The stack behind the lab.</h2>
+        </div>
+
+        <div class="powered-float" aria-label="16 Lab integration logos">
+          <article class="power-logo power-logo-musixmatch">
+            <img src="./assets/partners/musixmatch-icon.svg" alt="Musixmatch Pro" />
+            <span>Musixmatch Pro</span>
+          </article>
+          <article class="power-logo power-logo-lalal">
+            <img src="./assets/partners/lalal-mono.png" alt="LALAL.AI" />
+          </article>
+          <article class="power-logo power-logo-eleven">
+            <img src="./assets/partners/elevenlabs-mono.png" alt="ElevenLabs" />
+          </article>
+          <article class="power-logo power-logo-cyanite">
+            <img src="./assets/partners/cyanite-mono.png" alt="Cyanite" />
+          </article>
+          <article class="power-logo power-logo-songstats">
+            <img src="./assets/partners/songstats-mono.png" alt="Songstats" />
+          </article>
+          <article class="power-logo power-logo-n8n">
+            <img src="./assets/partners/n8n-mono.png" alt="n8n" />
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
