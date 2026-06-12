@@ -1,8 +1,26 @@
 # 16 Lab — Musicathon Build Plan (Refined)
 
 Date: June 12, 2026 (registration deadline day)
-Event: Musicathon by Musixmatch Pro, June 15–21, 2026 (remote)
+Event: Musicathon by Musixmatch Pro, June 15 00:00 UTC – June 21 23:59 UTC (remote)
 Status: landing page done (`index.html`), product code 0% — this plan is what we build.
+
+## Official rules (from contest T&Cs — confirmed)
+
+- **Judging:** Musixmatch team selects winners on **creativity, technical
+  execution, quality of Musixmatch Pro API integration, and overall impact**.
+- **Prizes — top 3 only, no partner tracks:** 1st $3,000 + 1yr Scale plan;
+  2nd $1,500 + 1yr Scale plan; 3rd $500 + 1yr Grow plan. Strategy: aim top 3.
+- **API access:** every registered participant gets a **Musixmatch Pro key with
+  Scale-plan access for the contest period** → the 30%-snippet risk is gone
+  during the week. Key is contest-use only; don't share or reuse it after.
+- **Entry requirements:** meaningful Musixmatch Pro API integration, working
+  demo + brief written description, original work, ONE submission per team.
+- **⚠️ COMPLIANCE — no caching Musixmatch content:** rules forbid bulk-download,
+  caching, scraping, or persistent storage of Musixmatch API content beyond
+  real-time display. So: lyrics are fetched live at display time, never stored.
+  We MAY cache our own pipeline outputs (LALAL stems, Scribe transcripts,
+  Claude decodes, scores) — those are not Musixmatch content.
+- Replit credits are claimable and optional.
 
 This supersedes the MVP scope in `16_lab_research_brief.md`. The research brief
 stays as background; where the two disagree, this document wins.
@@ -71,8 +89,9 @@ transcription layer. Local faster-whisper remains an offline fallback only.
 
 | Risk | Mitigation |
 |---|---|
-| Musixmatch free tier = 30% snippets | Request Pro access at registration TODAY; if denied, upload path is the product and search path shows snippets + metadata |
-| Live demo dies on async APIs | Pre-process and cache all 3 demo clips; demo plays from cache, live upload is the backup flex |
+| ~~Musixmatch free tier = 30% snippets~~ | RESOLVED — all participants get Scale-plan Pro keys for the contest week |
+| Musixmatch caching ban (disqualification risk) | Never store lyric content; live fetch at display; cache only our own pipeline outputs; record a backup demo VIDEO as the fallback, not cached lyric responses |
+| Live demo dies on async APIs | Pre-process and cache our pipeline outputs (stems/transcripts/decodes) for 3 demo clips; Musixmatch calls stay live but they're fast REST; backup video recorded day 6 |
 | LLM JSON drift | Solved natively by Claude structured outputs |
 | Slang transcription errors | Scribe keyterms + Haiku correction + short curated clips |
 | Scope creep | Stretch items gated to day 6; cut list is final |
