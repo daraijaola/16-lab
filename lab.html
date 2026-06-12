@@ -6,7 +6,7 @@
     <title>The Lab - 16 Lab</title>
     <meta
       name="description"
-      content="Search any released track or drop a freestyle. 16 Lab isolates the vocal, transcribes the bars, checks the Musixmatch catalog, and decodes every line."
+      content="The 16 Lab studio: decode any track or freestyle, browse your decodes, explore artists, and track pen-game scores."
     />
     <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,151 +15,150 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./lab.css" />
   </head>
-  <body>
-    <main class="site-shell lab-shell">
-      <header class="topbar" aria-label="Site header">
-        <div class="brand">
-          <a href="./index.html" aria-label="16 Lab home">
-            <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
-          </a>
-          <span><strong>16</strong>Lab</span>
-        </div>
-
-        <nav class="topbar-nav" aria-label="Section navigation">
-          <a href="./index.html#artists">Artists</a>
-          <a href="./index.html#decode">Decode</a>
-          <a href="./index.html#scores">Scores</a>
-          <a href="./index.html#stack">Stack</a>
-        </nav>
-
-        <a class="topbar-cta" href="./lab.html" aria-current="page">In the lab</a>
-      </header>
-
-      <section class="lab-head" aria-label="Lab introduction">
-        <span class="section-kicker">The lab</span>
-        <h1>Find a song.<br />Or drop one nobody has.</h1>
-        <p>
-          Search the Musixmatch catalog, or upload a freestyle and we'll
-          isolate the vocal, transcribe every bar, and check if it exists
-          anywhere.
-        </p>
-      </section>
-
-      <section class="lab-bench" aria-label="Search or upload a track">
-        <div class="lab-grid">
-          <!-- ============ SEARCH PANEL ============ -->
-          <article class="lab-panel lab-search" aria-label="Search a released track">
-            <h2 class="lab-panel-title">Find a song</h2>
-
-            <form class="lab-search-form" id="searchForm" role="search" aria-label="Track search">
-              <label class="lab-field-label" for="searchInput">Track or artist</label>
-              <div class="lab-field">
-                <input
-                  id="searchInput"
-                  name="q"
-                  type="search"
-                  placeholder="Dave - Starlight"
-                  autocomplete="off"
-                  spellcheck="false"
-                  required
-                  minlength="2"
-                />
-                <button type="submit" id="searchButton">Search</button>
-              </div>
-            </form>
-
-            <div class="lab-search-state" id="searchState" role="status" aria-live="polite">
-              <p class="lab-hint" id="searchHint">
-                Powered by Musixmatch Pro &mdash; lyrics fetched live, never stored.
-              </p>
-
-              <div class="lab-loading" id="searchLoading" hidden aria-label="Searching">
-                <span></span><span></span><span></span>
-              </div>
-
-              <ul class="lab-results" id="searchResults" hidden></ul>
-
-              <p class="lab-empty" id="searchEmpty" hidden>
-                No match in the catalog. If you have the audio,
-                <button type="button" class="lab-linklike" id="emptyToUpload">drop it in the lab</button>
-                &mdash; that's what we're for.
-              </p>
-
-              <p class="lab-error" id="searchError" hidden></p>
-            </div>
-          </article>
-
-          <!-- ============ UPLOAD PANEL ============ -->
-          <article class="lab-panel lab-upload" aria-label="Upload audio">
-            <h2 class="lab-panel-title">Drop audio</h2>
-
-            <div
-              class="lab-dropzone"
-              id="dropzone"
-              role="button"
-              tabindex="0"
-              aria-label="Drop an audio file here or press Enter to browse"
-            >
-              <div class="lab-drop-icon" aria-hidden="true"><span>MP3</span></div>
-              <strong>Drag audio here</strong>
-              <p>MP3, WAV, M4A, or WEBM &middot; up to 50 MB</p>
-              <input
-                type="file"
-                id="fileInput"
-                accept=".mp3,.wav,.m4a,.webm,audio/mpeg,audio/wav,audio/x-m4a,audio/mp4,audio/webm"
-                hidden
-              />
-            </div>
-
-            <div class="lab-file" id="filePreview" hidden>
-              <div class="lab-file-meta">
-                <strong id="fileName"></strong>
-                <span id="fileInfo"></span>
-              </div>
-              <div class="lab-file-actions">
-                <button type="button" class="lab-run" id="runButton">Run analysis</button>
-                <button type="button" class="lab-clear" id="clearFile" aria-label="Remove file">&times;</button>
-              </div>
-            </div>
-
-            <p class="lab-error" id="uploadError" hidden role="alert"></p>
-          </article>
-        </div>
-      </section>
-
-      <!-- ============ PIPELINE ============ -->
-      <section class="lab-pipeline" id="pipelineSection" hidden aria-label="Analysis progress">
-        <div class="lab-pipeline-head">
-          <span class="section-kicker">Running</span>
-          <h2 id="pipelineTitle">Scanning the bars</h2>
-          <p class="lab-pipeline-subject" id="pipelineSubject"></p>
-        </div>
-
-        <ol class="lab-steps" id="pipelineSteps" role="status" aria-live="polite"></ol>
-
-        <!-- Verdict: filled by lab.js on completion -->
-        <div class="lab-verdict" id="verdict" hidden>
-          <div class="lab-verdict-badge" id="verdictBadge"></div>
-          <h3 id="verdictTitle"></h3>
-          <p id="verdictText"></p>
-          <div class="hero-actions">
-            <a class="primary-action" id="verdictCta" href="#">Open track analysis</a>
-          </div>
-        </div>
-      </section>
-
-      <footer class="site-footer" aria-label="Site footer">
-        <div class="footer-brand">
+  <body class="lab-body">
+    <div class="lab-app">
+      <!-- ================= SIDEBAR ================= -->
+      <aside class="lab-sidebar" aria-label="Lab navigation">
+        <a class="lab-side-brand" href="./index.html" aria-label="16 Lab home">
           <img src="./assets/16-lab-logo.svg" alt="" />
           <span><strong>16</strong>Lab</span>
+        </a>
+
+        <nav class="lab-nav" aria-label="Lab sections">
+          <a href="#overview" data-section="overview">
+            <span class="lab-nav-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 13h7V4H4v9zm0 7h7v-5H4v5zm9 0h7v-9h-7v9zm0-16v5h7V4h-7z"/></svg>
+            </span>
+            Overview
+          </a>
+          <a href="#analyze" data-section="analyze">
+            <span class="lab-nav-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+            </span>
+            Analyze
+          </a>
+          <a href="#decodes" data-section="decodes">
+            <span class="lab-nav-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"/></svg>
+            </span>
+            Decodes
+            <span class="lab-nav-count" id="decodesCount">3</span>
+          </a>
+          <a href="#artists" data-section="artists">
+            <span class="lab-nav-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.33 0-8 1.67-8 5v2h16v-2c0-3.33-4.67-5-8-5z"/></svg>
+            </span>
+            Artists
+          </a>
+        </nav>
+
+        <div class="lab-side-foot">
+          <span class="lab-mode-chip" id="modeChip" title="Running on demo data until the backend lands">Demo data</span>
+          <a class="lab-back-link" href="./index.html">&larr; Back to site</a>
         </div>
-        <p>Decode every bar.</p>
-        <span class="footer-note">&copy; 2026 16 Lab</span>
-      </footer>
-    </main>
+      </aside>
+
+      <!-- ================= MAIN ================= -->
+      <div class="lab-main">
+        <header class="lab-appbar">
+          <h1 id="appbarTitle">Overview</h1>
+          <a class="lab-appbar-cta" href="#analyze">+ New analysis</a>
+        </header>
+
+        <main class="lab-view">
+          <!-- ========== OVERVIEW (the main room — fully designed) ========== -->
+          <section class="lab-section" id="section-overview" aria-label="Overview">
+            <div class="lab-welcome">
+              <span class="lab-kicker">The lab is open</span>
+              <h2>Decode <em>every</em> bar.</h2>
+              <p>
+                Search the Musixmatch catalog or drop a freestyle nobody has
+                lyrics for. The lab isolates, transcribes, matches, and decodes.
+              </p>
+            </div>
+
+            <div class="lab-stat-row">
+              <article class="lab-stat">
+                <strong id="statTracks">0</strong>
+                <span>Tracks decoded</span>
+              </article>
+              <article class="lab-stat">
+                <strong id="statBars">0</strong>
+                <span>Bars analyzed</span>
+              </article>
+              <article class="lab-stat">
+                <strong id="statScore">&ndash;</strong>
+                <span>Avg pen score</span>
+              </article>
+              <article class="lab-stat lab-stat-accent">
+                <strong id="statUnmatched">0</strong>
+                <span>Bars no platform covers</span>
+              </article>
+            </div>
+
+            <div class="lab-quick-grid">
+              <a class="lab-quick" href="#analyze">
+                <span class="lab-quick-tag">Musixmatch Pro</span>
+                <strong>Find a song</strong>
+                <p>Search the catalog and pull a released track apart, bar by bar.</p>
+                <span class="lab-quick-go" aria-hidden="true">&#8599;</span>
+              </a>
+              <a class="lab-quick lab-quick-orange" href="#analyze">
+                <span class="lab-quick-tag">LALAL.AI &middot; Scribe</span>
+                <strong>Drop a freestyle</strong>
+                <p>Audio in. Isolated vocal, transcript, decode, and score out.</p>
+                <span class="lab-quick-go" aria-hidden="true">&#8599;</span>
+              </a>
+            </div>
+
+            <div class="lab-recent">
+              <div class="lab-block-head">
+                <h3>Recent decodes</h3>
+                <a href="#decodes">View all</a>
+              </div>
+              <ul class="lab-decode-list" id="recentList"></ul>
+            </div>
+          </section>
+
+          <!-- ========== STAGED ROOMS (designed next, together) ========== -->
+          <section class="lab-section" id="section-analyze" hidden aria-label="Analyze">
+            <div class="lab-staged">
+              <span class="lab-kicker">Next on the bench</span>
+              <h2>The analyze room moves in here.</h2>
+              <p>
+                Catalog search and the freestyle drop &mdash; isolate, transcribe,
+                match on Musixmatch, decode. We're designing this room
+                deliberately. The pipeline already runs behind the curtain.
+              </p>
+              <a class="lab-staged-back" href="#overview">&larr; Back to overview</a>
+            </div>
+          </section>
+
+          <section class="lab-section" id="section-decodes" hidden aria-label="Decodes">
+            <div class="lab-block-head">
+              <h3>Every decode in the lab</h3>
+              <a href="#analyze">+ New analysis</a>
+            </div>
+            <ul class="lab-decode-list" id="decodeList"></ul>
+          </section>
+
+          <section class="lab-section" id="section-artists" hidden aria-label="Artists">
+            <div class="lab-staged">
+              <span class="lab-kicker">Next on the bench</span>
+              <h2>Artist profiles land here.</h2>
+              <p>
+                Dave, Central Cee, Stormzy &mdash; pen-game scores, Songstats
+                reach, and every decoded track per artist. Designed after the
+                analyze room.
+              </p>
+              <a class="lab-staged-back" href="#overview">&larr; Back to overview</a>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
 
     <script src="./lab.js"></script>
   </body>
