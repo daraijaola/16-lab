@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>16 Lab — Your decodes</title>
+    <meta name="description" content="Your library of decoded tracks and freestyles, with scores." />
+    <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./lab.css" />
+  </head>
+  <body>
+    <div class="lab-shell" data-screen-label="Decodes">
+      <header class="lab-topbar" aria-label="App header">
+        <a class="brand" href="./index.html">
+          <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
+          <span><strong>16</strong>Lab</span>
+        </a>
+
+        <nav class="lab-nav" aria-label="App navigation">
+          <a href="./lab.html">Overview</a>
+          <a href="./decodes.html" aria-current="page">Decodes</a>
+          <a href="./scores.html">Scores</a>
+        </nav>
+
+        <a class="back-link" href="./index.html">
+          <span aria-hidden="true">&#8598;</span>
+          Back to site
+        </a>
+      </header>
+
+      <main class="lab-main decodes-main">
+        <header class="decodes-head">
+          <div class="decodes-title">
+            <span class="page-kicker">Library</span>
+            <h1>Your decodes</h1>
+          </div>
+          <span class="decodes-count" id="decodesCount">10 decoded</span>
+        </header>
+
+        <div class="decodes-controls">
+          <div class="state-switch" id="filterGroup" role="group" aria-label="Filter decodes">
+            <button type="button" class="state-pill is-active" data-filter="all">All</button>
+            <button type="button" class="state-pill" data-filter="catalog">Catalog</button>
+            <button type="button" class="state-pill" data-filter="freestyle">Freestyle</button>
+          </div>
+
+          <div class="decodes-controls-right">
+            <div class="sort-control">
+              <span class="sort-label">Sort</span>
+              <div class="state-switch" id="sortGroup" role="group" aria-label="Sort decodes">
+                <button type="button" class="state-pill is-active" data-sort="recent">Most recent</button>
+                <button type="button" class="state-pill" data-sort="score">Highest score</button>
+              </div>
+            </div>
+
+            <div class="search-field decodes-search">
+              <span class="search-glyph" aria-hidden="true"></span>
+              <input
+                id="decodesSearch"
+                type="search"
+                placeholder="Search your decodes&hellip;"
+                autocomplete="off"
+                aria-label="Search your decodes"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="recents-grid decodes-grid" id="decodesGrid"></div>
+
+        <div class="recents-empty" id="decodesEmpty" hidden>
+          <p id="emptyMsg">Nothing decoded yet &mdash; your first bar is one search away.</p>
+          <div class="empty-actions">
+            <a class="empty-action empty-action-search" href="./lab.html">Search a track</a>
+            <a class="empty-action empty-action-upload" href="./lab.html">Drop a freestyle</a>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var DATA = [
+          { type: "catalog", title: "Starlight", artist: "Dave", score: 87, cover: "./assets/tracks/starlight-cover.jpg" },
+          { type: "freestyle", title: "Freestyle take 03", artist: "Uploaded \u00b7 1:42", score: 74, wave: [36, 72, 48, 88, 56, 30] },
+          { type: "catalog", title: "Black", artist: "Dave", score: 91, ph: "ink" },
+          { type: "catalog", title: "Sprinter", artist: "Dave & Central Cee", score: 82, ph: "orange" },
+          { type: "freestyle", title: "Kitchen freestyle", artist: "Uploaded \u00b7 2:18", score: 69, wave: [60, 40, 84, 52, 74, 44] },
+          { type: "catalog", title: "Clash", artist: "Dave & Stormzy", score: 84, ph: "blue" },
+          { type: "catalog", title: "Vossi Bop", artist: "Stormzy", score: 79, ph: "orange" },
+          { type: "freestyle", title: "Late night take", artist: "Uploaded \u00b7 0:58", score: 71, wave: [48, 80, 38, 66, 90, 50] },
+          { type: "catalog", title: "Location", artist: "Dave \u00b7 feat. Burna Boy", score: 80, ph: "blue" },
+          { type: "catalog", title: "In The Fire", artist: "Dave", score: 76, ph: "ink" }
+        ];
+
+        var grid = document.getElementById("decodesGrid");
+        var empty = document.getElementById("decodesEmpty");
+        var emptyMsg = document.getElementById("emptyMsg");
+        var countEl = document.getElementById("decodesCount");
+        var searchEl = document.getElementById("decodesSearch");
+
+        var state = { filter: "all", sort: "recent", q: "" };
+
+        function esc(t) {
+          return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function cardHTML(d) {
+          var phClass = d.ph === "blue" ? " cover-ph--blue" : d.ph === "orange" ? " cover-ph--orange" : "";
+          var art = d.type === "freestyle"
+            ? '<span class="card-art card-art-wave" aria-hidden="true">' +
+                d.wave.map(function (h) { return '<span style="--h:' + h + '%"></span>'; }).join("") +
+              "</span>"
+            : d.cover
+              ? '<span class="card-art"><img src="' + d.cover + '" alt="' + esc(d.title) + ' artwork" /></span>'
+              : '<span class="card-art cover-ph' + phClass + '" aria-hidden="true"></span>';
+          return (
+            '<a class="decode-card" href="./decode.html">' +
+              art +
+              '<span class="card-meta">' +
+                "<strong>" + esc(d.title) + "</strong>" +
+                '<span class="card-artist">' + esc(d.artist) + "</span>" +
+              "</span>" +
+              '<span class="score-chip">' + d.score + "</span>" +
+            "</a>"
+          );
+        }
+
+        function render() {
+          var q = state.q.trim().toLowerCase();
+          var list = DATA.filter(function (d) {
+            var matchType = state.filter === "all" || d.type === state.filter;
+            var matchQ = !q || (d.title + " " + d.artist).toLowerCase().indexOf(q) !== -1;
+            return matchType && matchQ;
+          });
+          if (state.sort === "score") {
+            list = list.slice().sort(function (a, b) { return b.score - a.score; });
+          }
+
+          var filtered = state.filter !== "all" || q;
+          if (list.length === 0) {
+            grid.hidden = true;
+            empty.hidden = false;
+            emptyMsg.innerHTML = q
+              ? "No decodes match &ldquo;" + esc(state.q.trim()) + "&rdquo; &mdash; try another spelling or filter."
+              : "Nothing here yet &mdash; your first bar is one search away.";
+          } else {
+            grid.hidden = false;
+            empty.hidden = true;
+            grid.innerHTML = list.map(cardHTML).join("");
+          }
+
+          countEl.textContent = filtered
+            ? list.length + " of " + DATA.length
+            : DATA.length + " decoded";
+        }
+
+        function wireSwitch(id, key) {
+          var pills = Array.prototype.slice.call(document.querySelectorAll("#" + id + " .state-pill"));
+          pills.forEach(function (p) {
+            p.addEventListener("click", function () {
+              pills.forEach(function (q) { q.classList.toggle("is-active", q === p); });
+              state[key] = p.getAttribute("data-" + key);
+              render();
+            });
+          });
+        }
+        wireSwitch("filterGroup", "filter");
+        wireSwitch("sortGroup", "sort");
+
+        searchEl.addEventListener("input", function () {
+          state.q = searchEl.value;
+          render();
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>

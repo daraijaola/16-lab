@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>16 Lab — Search results</title>
+    <meta name="description" content="Search results for any track, artist, or freestyle. Pick a track to decode it bar by bar." />
+    <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./lab.css" />
+  </head>
+  <body>
+    <div class="lab-shell" data-screen-label="Search results">
+      <header class="lab-topbar" aria-label="App header">
+        <a class="brand" href="./index.html">
+          <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
+          <span><strong>16</strong>Lab</span>
+        </a>
+
+        <nav class="lab-nav" aria-label="App navigation">
+          <a href="./lab.html">Overview</a>
+          <a href="./decodes.html">Decodes</a>
+          <a href="./scores.html">Scores</a>
+        </nav>
+
+        <a class="back-link" href="./index.html">
+          <span aria-hidden="true">&#8598;</span>
+          Back to site
+        </a>
+      </header>
+
+      <main class="lab-main results-main">
+        <section class="results-section" aria-label="Search results">
+          <form class="results-search" id="searchForm" aria-label="Refine your search">
+            <div class="search-field results-field">
+              <span class="search-glyph" aria-hidden="true"></span>
+              <input
+                id="lab-search"
+                type="search"
+                value="Dave"
+                placeholder="Search any track, artist, or freestyle&hellip;"
+                autocomplete="off"
+                aria-label="Search the catalog"
+              />
+              <button type="submit">Search</button>
+            </div>
+          </form>
+
+          <div class="results-bar">
+            <p class="results-count" id="resultsCount">
+              <strong>7 tracks</strong> for &ldquo;Dave&rdquo;
+            </p>
+            <div class="state-switch" role="group" aria-label="Preview page state">
+              <button type="button" class="state-pill is-active" data-state="results">Results</button>
+              <button type="button" class="state-pill" data-state="loading">Loading</button>
+              <button type="button" class="state-pill" data-state="empty">No results</button>
+            </div>
+          </div>
+
+          <!-- Results list -->
+          <ol class="results-list" id="resultsList">
+            <li class="result-row">
+              <a class="result-hit" href="./decode.html" aria-label="Decode Sprinter by Dave & Central Cee">
+                <span class="result-art cover-ph cover-ph--orange" aria-hidden="true"></span>
+                <span class="result-info">
+                  <strong class="result-title">Sprinter</strong>
+                  <span class="result-artist">Dave &amp; Central Cee</span>
+                </span>
+              </a>
+              <span class="result-badge">
+                <img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />
+                Lyrics &middot; Musixmatch
+              </span>
+              <span class="result-time">3:49</span>
+              <a class="decode-btn" href="./decode.html">Decode</a>
+            </li>
+
+            <li class="result-row">
+              <a class="result-hit" href="./decode.html" aria-label="Decode Starlight by Dave">
+                <span class="result-art">
+                  <img src="./assets/tracks/starlight-cover.jpg" alt="Starlight artwork" />
+                </span>
+                <span class="result-info">
+                  <strong class="result-title">Starlight</strong>
+                  <span class="result-artist">Dave</span>
+                </span>
+              </a>
+              <span class="result-badge">
+                <img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />
+                Lyrics &middot; Musixmatch
+              </span>
+              <span class="result-time">3:42</span>
+              <a class="decode-btn" href="./decode.html">Decode</a>
+            </li>
+
+            <li class="result-row">
+              <a class="result-hit" href="./decode.html" aria-label="Decode Black by Dave">
+                <span class="result-art cover-ph" aria-hidden="true"></span>
+                <span class="result-info">
+                  <strong class="result-title">Black</strong>
+                  <span class="result-artist">Dave</span>
+                </span>
+              </a>
+              <span class="result-badge">
+                <img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />
+                Lyrics &middot; Musixmatch
+              </span>
+              <span class="result-time">4:01</span>
+              <a class="decode-btn" href="./decode.html">Decode</a>
+            </li>
+
+            <li class="result-row">
+              <a class="result-hit" href="./decode.html" aria-label="Decode Location by Dave feat. Burna Boy">
+                <span class="result-art cover-ph cover-ph--blue" aria-hidden="true"></span>
+                <span class="result-info">
+                  <strong class="result-title">Location</strong>
+                  <span class="result-artist">Dave &middot; feat. Burna Boy</span>
+                </span>
+              </a>
+              <span class="result-badge">
+                <img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />
+                Lyrics &middot; Musixmatch
+              </span>
+              <span class="result-time">4:00</span>
+              <a class="decode-btn" href="./decode.html">Decode</a>
+            </li>
+
+            <li class="result-row">
+              <a class="result-hit" href="./decode.html" aria-label="Decode Clash by Dave feat. Stormzy">
+                <span class="result-art cover-ph cover-ph--orange" aria-hidden="true"></span>
+                <span class="result-info">
+                  <strong class="result-title">Clash</strong>
+                  <span class="result-artist">Dave &middot; feat. Stormzy</span>
+                </span>
+              </a>
+              <span class="result-badge">
+                <img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />
+                Lyrics &middot; Musixmatch
+              </span>
+              <span class="result-time">3:16</span>
+              <a class="decode-btn" href="./decode.html">Decode</a>
+            </li>
+
+            <li class="result-row">
+              <a class="result-hit" href="./decode.html" aria-label="Decode In The Fire by Dave">
+                <span class="result-art cover-ph" aria-hidden="true"></span>
+                <span class="result-info">
+                  <strong class="result-title">In The Fire</strong>
+                  <span class="result-artist">Dave</span>
+                </span>
+              </a>
+              <span class="result-badge">
+                <img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />
+                Lyrics &middot; Musixmatch
+              </span>
+              <span class="result-time">5:51</span>
+              <a class="decode-btn" href="./decode.html">Decode</a>
+            </li>
+
+            <li class="result-row">
+              <a class="result-hit" href="./decode.html" aria-label="Decode Titanium by Dave">
+                <span class="result-art cover-ph cover-ph--blue" aria-hidden="true"></span>
+                <span class="result-info">
+                  <strong class="result-title">Titanium</strong>
+                  <span class="result-artist">Dave</span>
+                </span>
+              </a>
+              <span class="result-badge">
+                <img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />
+                Lyrics &middot; Musixmatch
+              </span>
+              <span class="result-time">2:55</span>
+              <a class="decode-btn" href="./decode.html">Decode</a>
+            </li>
+          </ol>
+
+          <!-- Loading skeleton -->
+          <ol class="results-skeleton" id="resultsSkeleton" hidden aria-hidden="true">
+            <li class="skel-row">
+              <span class="skel-art"></span>
+              <span class="skel-info">
+                <span class="skel-line skel-line-title"></span>
+                <span class="skel-line skel-line-artist"></span>
+              </span>
+              <span class="skel-badge"></span>
+              <span class="skel-time"></span>
+              <span class="skel-btn"></span>
+            </li>
+            <li class="skel-row">
+              <span class="skel-art"></span>
+              <span class="skel-info">
+                <span class="skel-line skel-line-title"></span>
+                <span class="skel-line skel-line-artist"></span>
+              </span>
+              <span class="skel-badge"></span>
+              <span class="skel-time"></span>
+              <span class="skel-btn"></span>
+            </li>
+            <li class="skel-row">
+              <span class="skel-art"></span>
+              <span class="skel-info">
+                <span class="skel-line skel-line-title"></span>
+                <span class="skel-line skel-line-artist"></span>
+              </span>
+              <span class="skel-badge"></span>
+              <span class="skel-time"></span>
+              <span class="skel-btn"></span>
+            </li>
+            <li class="skel-row">
+              <span class="skel-art"></span>
+              <span class="skel-info">
+                <span class="skel-line skel-line-title"></span>
+                <span class="skel-line skel-line-artist"></span>
+              </span>
+              <span class="skel-badge"></span>
+              <span class="skel-time"></span>
+              <span class="skel-btn"></span>
+            </li>
+            <li class="skel-row">
+              <span class="skel-art"></span>
+              <span class="skel-info">
+                <span class="skel-line skel-line-title"></span>
+                <span class="skel-line skel-line-artist"></span>
+              </span>
+              <span class="skel-badge"></span>
+              <span class="skel-time"></span>
+              <span class="skel-btn"></span>
+            </li>
+          </ol>
+
+          <!-- No results -->
+          <div class="results-empty" id="resultsEmpty" hidden>
+            <span class="empty-glyph" aria-hidden="true"></span>
+            <p class="empty-line">No tracks match &ldquo;<span id="emptyQuery">xyzzy</span>&rdquo; &mdash; try a different spelling, or drop the audio instead.</p>
+            <div class="empty-actions">
+              <button class="empty-action empty-action-search" type="button">Edit search</button>
+              <a class="empty-action empty-action-upload" href="./lab.html#upload">
+                <span class="up-arrow" aria-hidden="true"></span>
+                Drop a freestyle
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var list = document.getElementById("resultsList");
+        var skeleton = document.getElementById("resultsSkeleton");
+        var empty = document.getElementById("resultsEmpty");
+        var count = document.getElementById("resultsCount");
+        var input = document.getElementById("lab-search");
+        var form = document.getElementById("searchForm");
+        var emptyQuery = document.getElementById("emptyQuery");
+        var pills = Array.prototype.slice.call(document.querySelectorAll(".state-pill"));
+
+        // Pick up the query passed from Overview (?q=)
+        var params = new URLSearchParams(window.location.search);
+        var q = (params.get("q") || "Dave").trim();
+        if (q) input.value = q;
+
+        function esc(s) {
+          return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        var views = { results: list, loading: skeleton, empty: empty };
+        function counts(state) {
+          var qh = esc(input.value || "Dave");
+          if (state === "loading") return "<strong>Searching</strong> for &ldquo;" + qh + "&rdquo;&hellip;";
+          if (state === "empty") return "<strong>0 tracks</strong> for &ldquo;" + qh + "&rdquo;";
+          return "<strong>7 tracks</strong> for &ldquo;" + qh + "&rdquo;";
+        }
+
+        function show(state) {
+          Object.keys(views).forEach(function (key) {
+            views[key].hidden = key !== state;
+          });
+          count.innerHTML = counts(state);
+          if (state === "empty") emptyQuery.textContent = input.value || "Dave";
+          pills.forEach(function (p) {
+            p.classList.toggle("is-active", p.getAttribute("data-state") === state);
+          });
+        }
+        show("results");
+
+        pills.forEach(function (p) {
+          p.addEventListener("click", function () { show(p.getAttribute("data-state")); });
+        });
+
+        // Refine search: brief loading shimmer, then results
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          show("loading");
+          setTimeout(function () { show("results"); }, 900);
+        });
+
+        // Empty-state: edit search focuses the field
+        var editBtn = document.querySelector(".empty-action-search");
+        if (editBtn) editBtn.addEventListener("click", function () {
+          show("results");
+          input.focus();
+          input.select();
+        });
+      })();
+    </script>
+  </body>
+</html>

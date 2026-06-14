@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>16 Lab — Scores</title>
+    <meta name="description" content="The pen game, measured. Technical rap metrics — rhyme, vocabulary, flow — across UK artists." />
+    <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./lab.css" />
+  </head>
+  <body>
+    <div class="lab-shell" data-screen-label="Scores">
+      <header class="lab-topbar" aria-label="App header">
+        <a class="brand" href="./index.html">
+          <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
+          <span><strong>16</strong>Lab</span>
+        </a>
+
+        <nav class="lab-nav" aria-label="App navigation">
+          <a href="./lab.html">Overview</a>
+          <a href="./decodes.html">Decodes</a>
+          <a href="./scores.html" aria-current="page">Scores</a>
+        </nav>
+
+        <a class="back-link" href="./index.html">
+          <span aria-hidden="true">&#8598;</span>
+          Back to site
+        </a>
+      </header>
+
+      <main class="lab-main scores-main">
+        <!-- Page header -->
+        <div class="scores-head">
+          <div class="scores-title">
+            <h1>Scores</h1>
+            <p class="scores-sub">
+              Technical metrics &mdash; rhyme, vocabulary, flow.
+              <span>Not a verdict on who&rsquo;s a better artist.</span>
+            </p>
+          </div>
+          <div class="state-switch mode-switch" role="group" aria-label="View mode">
+            <button type="button" class="state-pill is-active" data-mode="leaderboard">Leaderboard</button>
+            <button type="button" class="state-pill" data-mode="compare">Compare</button>
+          </div>
+        </div>
+
+        <!-- MODE 1: Leaderboard -->
+        <section class="leaderboard" id="leaderboard" aria-label="Leaderboard">
+          <div class="lb-head" aria-hidden="true">
+            <span class="lbh-rank">#</span>
+            <span class="lbh-artist">Artist</span>
+            <span class="lbh-score">Pen score</span>
+            <span class="lbh-tracks">Decoded</span>
+            <span class="lbh-tag">Standout</span>
+          </div>
+          <ol class="lb-list" id="lbList"></ol>
+        </section>
+
+        <!-- MODE 2: Compare -->
+        <section class="compare" id="compare" aria-label="Compare two artists" hidden>
+          <div class="cmp-grid">
+            <!-- Slot A -->
+            <div class="cmp-slot cmp-slot--a">
+              <span class="cmp-slot-tag">Track A</span>
+              <div class="cmp-picker">
+                <span class="cmp-avatar" id="avatarA"></span>
+                <div class="cmp-pick-meta">
+                  <label class="cmp-pick-label" for="selectA">Choose track</label>
+                  <div class="cmp-select-wrap">
+                    <select id="selectA" class="cmp-select" aria-label="Track A"></select>
+                    <span class="cmp-caret" aria-hidden="true"></span>
+                  </div>
+                  <span class="cmp-sub" id="subA"></span>
+                </div>
+              </div>
+              <div class="cmp-bigscore">
+                <span class="cmp-big-num" id="bigA">87</span>
+                <span class="cmp-big-cap">Pen score</span>
+              </div>
+            </div>
+
+            <span class="cmp-vs" aria-hidden="true">vs</span>
+
+            <!-- Slot B -->
+            <div class="cmp-slot cmp-slot--b">
+              <span class="cmp-slot-tag">Track B</span>
+              <div class="cmp-picker">
+                <span class="cmp-avatar" id="avatarB"></span>
+                <div class="cmp-pick-meta">
+                  <label class="cmp-pick-label" for="selectB">Choose track</label>
+                  <div class="cmp-select-wrap">
+                    <select id="selectB" class="cmp-select" aria-label="Track B"></select>
+                    <span class="cmp-caret" aria-hidden="true"></span>
+                  </div>
+                  <span class="cmp-sub" id="subB"></span>
+                </div>
+              </div>
+              <div class="cmp-bigscore">
+                <span class="cmp-big-num" id="bigB">80</span>
+                <span class="cmp-big-cap">Pen score</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paired metric bars -->
+          <div class="cmp-metrics" id="cmpMetrics"></div>
+
+          <!-- Verdict -->
+          <div class="cmp-verdict">
+            <span class="cmp-verdict-ico" aria-hidden="true"></span>
+            <p id="verdict"></p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        /* ---------------- Metrics ---------------- */
+        var METRICS = [
+          { key: "rhyme", label: "Rhyme density" },
+          { key: "internal", label: "Internal rhymes" },
+          { key: "vocab", label: "Vocabulary richness" },
+          { key: "multi", label: "Multisyllabic rate" },
+          { key: "variance", label: "Syllable variance" },
+          { key: "reference", label: "Reference density" }
+        ];
+
+        /* ---------------- Artists (mock) ---------------- */
+        var ARTISTS = [
+          { id: "dave", name: "Dave", img: "./assets/artists/dave.png", tracks: 42,
+            m: { rhyme: 85, internal: 81, vocab: 96, multi: 84, variance: 82, reference: 94 } },
+          { id: "simz", name: "Little Simz", tracks: 29,
+            m: { rhyme: 84, internal: 83, vocab: 94, multi: 90, variance: 81, reference: 84 } },
+          { id: "ghetts", name: "Ghetts", tracks: 24,
+            m: { rhyme: 93, internal: 95, vocab: 85, multi: 84, variance: 78, reference: 75 } },
+          { id: "kojey", name: "Kojey Radical", tracks: 18,
+            m: { rhyme: 80, internal: 78, vocab: 90, multi: 76, variance: 85, reference: 89 } },
+          { id: "stormzy", name: "Stormzy", img: "./assets/artists/stormzy.png", tracks: 35,
+            m: { rhyme: 81, internal: 76, vocab: 80, multi: 78, variance: 90, reference: 81 } },
+          { id: "cench", name: "Central Cee", img: "./assets/artists/central-cee.png", tracks: 38,
+            m: { rhyme: 85, internal: 79, vocab: 75, multi: 87, variance: 73, reference: 81 } },
+          { id: "headie", name: "Headie One", tracks: 23,
+            m: { rhyme: 80, internal: 82, vocab: 77, multi: 81, variance: 77, reference: 77 } },
+          { id: "jhus", name: "J Hus", tracks: 21,
+            m: { rhyme: 77, internal: 73, vocab: 79, multi: 76, variance: 84, reference: 79 } }
+        ];
+
+        function avg(a) {
+          var s = 0;
+          METRICS.forEach(function (mt) { s += a.m[mt.key]; });
+          return s / METRICS.length;
+        }
+        ARTISTS.forEach(function (a) {
+          a.scoreRaw = avg(a);
+          a.score = Math.round(a.scoreRaw);
+        });
+
+        // leader per metric (for #1 detection)
+        var leaderOf = {};
+        METRICS.forEach(function (mt) {
+          var best = null;
+          ARTISTS.forEach(function (a) {
+            if (!best || a.m[mt.key] > best.m[mt.key]) best = a;
+          });
+          leaderOf[mt.key] = best.id;
+        });
+
+        function standout(a) {
+          // a #1 metric if held, else personal-best metric
+          var ownLed = METRICS.filter(function (mt) { return leaderOf[mt.key] === a.id; });
+          if (ownLed.length) {
+            // pick the one with the highest value
+            ownLed.sort(function (x, y) { return a.m[y.key] - a.m[x.key]; });
+            return { text: "Top " + ownLed[0].label.toLowerCase(), top: true };
+          }
+          var best = METRICS.slice().sort(function (x, y) { return a.m[y.key] - a.m[x.key]; })[0];
+          return { text: "Strong " + best.label.toLowerCase(), top: false };
+        }
+
+        function monogram(name) {
+          var parts = name.split(" ");
+          var i = parts[0][0] + (parts[1] ? parts[1][0] : "");
+          return i.toUpperCase();
+        }
+
+        function avatarHTML(a, cls) {
+          if (a.img) {
+            return '<span class="' + cls + '"><img src="' + a.img + '" alt="" /></span>';
+          }
+          return '<span class="' + cls + ' is-mono" data-mono="' + a.id + '">' + monogram(a.name) + "</span>";
+        }
+
+        /* ---------------- Leaderboard ---------------- */
+        var lbList = document.getElementById("lbList");
+
+        function renderLeaderboard() {
+          var ranked = ARTISTS.slice().sort(function (x, y) { return y.scoreRaw - x.scoreRaw; });
+          lbList.innerHTML = ranked.map(function (a, i) {
+            var rank = i + 1;
+            var so = standout(a);
+            return (
+              '<li class="lb-row' + (rank <= 3 ? " is-top is-top-" + rank : "") + '" tabindex="0">' +
+                '<span class="lb-rank">' + (rank <= 3 ? '<span class="lb-medal">' + rank + "</span>" : rank) + "</span>" +
+                avatarHTML(a, "lb-avatar") +
+                '<span class="lb-name">' + a.name + "</span>" +
+                '<span class="lb-score-chip">' + a.score + "</span>" +
+                '<span class="lb-tracks"><strong>' + a.tracks + "</strong> tracks</span>" +
+                '<span class="lb-tag' + (so.top ? " is-top-tag" : "") + '">' + so.text + "</span>" +
+              "</li>"
+            );
+          }).join("");
+        }
+
+        /* ---------------- Compare (by song) ---------------- */
+        var SONGS = [
+          { id: "starlight", title: "Starlight", artist: "Dave", cover: "./assets/tracks/starlight-cover.jpg",
+            m: { rhyme: 84, internal: 80, vocab: 94, multi: 82, variance: 80, reference: 92 } },
+          { id: "sprinter", title: "Sprinter", artist: "Dave & Central Cee", ph: "orange",
+            m: { rhyme: 88, internal: 82, vocab: 74, multi: 90, variance: 76, reference: 70 } },
+          { id: "black", title: "Black", artist: "Dave", ph: "ink",
+            m: { rhyme: 86, internal: 83, vocab: 95, multi: 81, variance: 84, reference: 96 } },
+          { id: "clash", title: "Clash", artist: "Dave & Stormzy", ph: "blue",
+            m: { rhyme: 90, internal: 92, vocab: 82, multi: 85, variance: 79, reference: 76 } },
+          { id: "location", title: "Location", artist: "Dave \u00b7 feat. Burna Boy", ph: "blue",
+            m: { rhyme: 80, internal: 77, vocab: 90, multi: 79, variance: 82, reference: 88 } },
+          { id: "vossibop", title: "Vossi Bop", artist: "Stormzy", ph: "orange",
+            m: { rhyme: 81, internal: 76, vocab: 80, multi: 78, variance: 90, reference: 80 } },
+          { id: "inthefire", title: "In The Fire", artist: "Dave", ph: "ink",
+            m: { rhyme: 79, internal: 80, vocab: 85, multi: 77, variance: 78, reference: 83 } },
+          { id: "freestyle03", title: "Freestyle take 03", artist: "Uploaded \u00b7 1:42", wave: [36, 72, 48, 88, 56],
+            m: { rhyme: 75, internal: 72, vocab: 78, multi: 82, variance: 70, reference: 68 } }
+        ];
+        SONGS.forEach(function (s) { s.score = Math.round(avg(s)); });
+
+        var selectA = document.getElementById("selectA");
+        var selectB = document.getElementById("selectB");
+        var avatarA = document.getElementById("avatarA");
+        var avatarB = document.getElementById("avatarB");
+        var subA = document.getElementById("subA");
+        var subB = document.getElementById("subB");
+        var bigA = document.getElementById("bigA");
+        var bigB = document.getElementById("bigB");
+        var cmpMetrics = document.getElementById("cmpMetrics");
+        var verdictEl = document.getElementById("verdict");
+
+        function songById(id) {
+          for (var i = 0; i < SONGS.length; i++) if (SONGS[i].id === id) return SONGS[i];
+          return SONGS[0];
+        }
+
+        function fillSelects() {
+          var opts = SONGS.map(function (s) {
+            return '<option value="' + s.id + '">' + s.title + " \u2014 " + s.artist + "</option>";
+          }).join("");
+          selectA.innerHTML = opts;
+          selectB.innerHTML = opts;
+          selectA.value = "starlight";
+          selectB.value = "sprinter";
+        }
+
+        function setAvatar(el, s, side) {
+          var base = "cmp-avatar cmp-avatar--" + side;
+          if (s.cover) {
+            el.className = base;
+            el.innerHTML = '<img src="' + s.cover + '" alt="" />';
+          } else if (s.wave) {
+            el.className = base + " cmp-avatar--wave";
+            el.innerHTML = s.wave.map(function (h) { return '<span style="--h:' + h + '%"></span>'; }).join("");
+          } else {
+            var phClass = s.ph === "blue" ? " cover-ph--blue" : s.ph === "orange" ? " cover-ph--orange" : "";
+            el.className = base + " cover-ph" + phClass;
+            el.innerHTML = "";
+          }
+        }
+
+        function buildVerdict(a, b) {
+          var aLead = null, bLead = null, aGap = -1, bGap = -1;
+          METRICS.forEach(function (mt) {
+            var d = a.m[mt.key] - b.m[mt.key];
+            if (d > aGap) { aGap = d; aLead = mt; }
+            if (-d > bGap) { bGap = -d; bLead = mt; }
+          });
+          if (aGap <= 0) {
+            return "<strong>" + esc(b.title) + "</strong> leads across every tracked metric \u2014 widest on " +
+              bLead.label.toLowerCase() + ".";
+          }
+          if (bGap <= 0) {
+            return "<strong>" + esc(a.title) + "</strong> leads across every tracked metric \u2014 widest on " +
+              aLead.label.toLowerCase() + ".";
+          }
+          return "<strong>" + esc(a.title) + "</strong> leads on " + aLead.label.toLowerCase() +
+            "; <strong>" + esc(b.title) + "</strong> leads on " + bLead.label.toLowerCase() + ".";
+        }
+
+        function esc(t) {
+          return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function renderCompare() {
+          var a = songById(selectA.value);
+          var b = songById(selectB.value);
+          if (a.id === b.id) {
+            var alt = SONGS.filter(function (x) { return x.id !== a.id; })[0];
+            selectB.value = alt.id;
+            b = alt;
+          }
+
+          setAvatar(avatarA, a, "a");
+          setAvatar(avatarB, b, "b");
+          subA.textContent = a.artist;
+          subB.textContent = b.artist;
+          bigA.textContent = a.score;
+          bigB.textContent = b.score;
+
+          cmpMetrics.innerHTML = METRICS.map(function (mt) {
+            var va = a.m[mt.key], vb = b.m[mt.key];
+            var aWin = va > vb, bWin = vb > va;
+            return (
+              '<div class="cmp-metric">' +
+                '<div class="cmp-metric-label">' + mt.label + "</div>" +
+                '<div class="cmp-bars">' +
+                  '<div class="cmp-bar-row cmp-bar-row--a">' +
+                    '<span class="cmp-val' + (aWin ? " is-win" : "") + '">' + va + "</span>" +
+                    '<span class="cmp-track"><span class="cmp-fill cmp-fill--a" style="width:' + va + '%"></span></span>' +
+                  "</div>" +
+                  '<div class="cmp-bar-row cmp-bar-row--b">' +
+                    '<span class="cmp-val' + (bWin ? " is-win" : "") + '">' + vb + "</span>" +
+                    '<span class="cmp-track"><span class="cmp-fill cmp-fill--b" style="width:' + vb + '%"></span></span>' +
+                  "</div>" +
+                "</div>" +
+              "</div>"
+            );
+          }).join("");
+
+          verdictEl.innerHTML = buildVerdict(a, b);
+        }
+
+        selectA.addEventListener("change", renderCompare);
+        selectB.addEventListener("change", renderCompare);
+
+        /* ---------------- Mode switch ---------------- */
+        var modePills = Array.prototype.slice.call(document.querySelectorAll(".mode-switch [data-mode]"));
+        var lb = document.getElementById("leaderboard");
+        var cmp = document.getElementById("compare");
+
+        function setMode(mode) {
+          modePills.forEach(function (p) {
+            p.classList.toggle("is-active", p.getAttribute("data-mode") === mode);
+          });
+          lb.hidden = mode !== "leaderboard";
+          cmp.hidden = mode !== "compare";
+        }
+        modePills.forEach(function (p) {
+          p.addEventListener("click", function () { setMode(p.getAttribute("data-mode")); });
+        });
+
+        // init
+        renderLeaderboard();
+        fillSelects();
+        renderCompare();
+        setMode("leaderboard");
+      })();
+    </script>
+  </body>
+</html>

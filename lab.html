@@ -3,11 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>The Lab - 16 Lab</title>
-    <meta
-      name="description"
-      content="Search any released track or drop a freestyle. 16 Lab isolates the vocal, transcribes the bars, checks the Musixmatch catalog, and decodes every line."
-    />
+    <title>16 Lab — Overview</title>
+    <meta name="description" content="Search any track or drop a freestyle. 16 Lab returns lyrics, bar-by-bar meaning, and a technical score." />
     <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,152 +12,179 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./lab.css" />
   </head>
   <body>
-    <main class="site-shell lab-shell">
-      <header class="topbar" aria-label="Site header">
-        <div class="brand">
-          <a href="./index.html" aria-label="16 Lab home">
-            <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
-          </a>
+    <div class="lab-shell" data-screen-label="Overview">
+      <header class="lab-topbar" aria-label="App header">
+        <a class="brand" href="./index.html">
+          <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
           <span><strong>16</strong>Lab</span>
-        </div>
+        </a>
 
-        <nav class="topbar-nav" aria-label="Section navigation">
-          <a href="./index.html#artists">Artists</a>
-          <a href="./index.html#decode">Decode</a>
-          <a href="./index.html#scores">Scores</a>
-          <a href="./index.html#stack">Stack</a>
+        <nav class="lab-nav" aria-label="App navigation">
+          <a href="./lab.html" aria-current="page">Overview</a>
+          <a href="./decodes.html">Decodes</a>
+          <a href="./scores.html">Scores</a>
         </nav>
 
-        <a class="topbar-cta" href="./lab.html" aria-current="page">In the lab</a>
+        <a class="back-link" href="./index.html">
+          <span aria-hidden="true">&#8598;</span>
+          Back to site
+        </a>
       </header>
 
-      <section class="lab-head" aria-label="Lab introduction">
-        <span class="section-kicker">The lab</span>
-        <h1>Find a song.<br />Or drop one nobody has.</h1>
-        <p>
-          Search the Musixmatch catalog, or upload a freestyle and we'll
-          isolate the vocal, transcribe every bar, and check if it exists
-          anywhere.
-        </p>
-      </section>
+      <main class="lab-main">
+        <section class="start-section" aria-label="Start a decode">
+          <header class="page-head">
+            <span class="page-kicker">Overview</span>
+            <h1>Decode something.</h1>
+          </header>
 
-      <section class="lab-bench" aria-label="Search or upload a track">
-        <div class="lab-grid">
-          <!-- ============ SEARCH PANEL ============ -->
-          <article class="lab-panel lab-search" aria-label="Search a released track">
-            <h2 class="lab-panel-title">Find a song</h2>
-
-            <form class="lab-search-form" id="searchForm" role="search" aria-label="Track search">
-              <label class="lab-field-label" for="searchInput">Track or artist</label>
-              <div class="lab-field">
+          <div class="start-grid">
+            <form class="search-card" id="searchForm" aria-label="Search a track">
+              <label class="field-label" for="lab-search">Search the catalog</label>
+              <div class="search-field">
+                <span class="search-glyph" aria-hidden="true"></span>
                 <input
-                  id="searchInput"
-                  name="q"
+                  id="lab-search"
                   type="search"
-                  placeholder="Dave - Starlight"
+                  placeholder="Search any track, artist, or freestyle&hellip;"
                   autocomplete="off"
-                  spellcheck="false"
-                  required
-                  minlength="2"
                 />
-                <button type="submit" id="searchButton">Search</button>
+                <button type="submit">Search</button>
               </div>
+              <p class="field-hint">Lyrics via Musixmatch Pro &mdash; every released track, decoded on demand.</p>
             </form>
 
-            <div class="lab-search-state" id="searchState" role="status" aria-live="polite">
-              <p class="lab-hint" id="searchHint">
-                Powered by Musixmatch Pro &mdash; lyrics fetched live, never stored.
-              </p>
-
-              <div class="lab-loading" id="searchLoading" hidden aria-label="Searching">
-                <span></span><span></span><span></span>
-              </div>
-
-              <ul class="lab-results" id="searchResults" hidden></ul>
-
-              <p class="lab-empty" id="searchEmpty" hidden>
-                No match in the catalog. If you have the audio,
-                <button type="button" class="lab-linklike" id="emptyToUpload">drop it in the lab</button>
-                &mdash; that's what we're for.
-              </p>
-
-              <p class="lab-error" id="searchError" hidden></p>
-            </div>
-          </article>
-
-          <!-- ============ UPLOAD PANEL ============ -->
-          <article class="lab-panel lab-upload" aria-label="Upload audio">
-            <h2 class="lab-panel-title">Drop audio</h2>
-
             <div
-              class="lab-dropzone"
+              class="drop-card"
               id="dropzone"
               role="button"
               tabindex="0"
-              aria-label="Drop an audio file here or press Enter to browse"
+              aria-label="Upload a freestyle audio file"
             >
-              <div class="lab-drop-icon" aria-hidden="true"><span>MP3</span></div>
-              <strong>Drag audio here</strong>
-              <p>MP3, WAV, M4A, or WEBM &middot; up to 50 MB</p>
-              <input
-                type="file"
-                id="fileInput"
-                accept=".mp3,.wav,.m4a,.webm,audio/mpeg,audio/wav,audio/x-m4a,audio/mp4,audio/webm"
-                hidden
-              />
-            </div>
-
-            <div class="lab-file" id="filePreview" hidden>
-              <div class="lab-file-meta">
-                <strong id="fileName"></strong>
-                <span id="fileInfo"></span>
+              <span class="drop-glyph" aria-hidden="true">
+                <span class="drop-arrow"></span>
+              </span>
+              <div class="drop-copy">
+                <strong>or drop a freestyle</strong>
+                <p>MP3, WAV, M4A &middot; up to 10 min</p>
               </div>
-              <div class="lab-file-actions">
-                <button type="button" class="lab-run" id="runButton">Run analysis</button>
-                <button type="button" class="lab-clear" id="clearFile" aria-label="Remove file">&times;</button>
-              </div>
+              <span class="drop-browse">Browse files</span>
             </div>
-
-            <p class="lab-error" id="uploadError" hidden role="alert"></p>
-          </article>
-        </div>
-      </section>
-
-      <!-- ============ PIPELINE ============ -->
-      <section class="lab-pipeline" id="pipelineSection" hidden aria-label="Analysis progress">
-        <div class="lab-pipeline-head">
-          <span class="section-kicker">Running</span>
-          <h2 id="pipelineTitle">Scanning the bars</h2>
-          <p class="lab-pipeline-subject" id="pipelineSubject"></p>
-        </div>
-
-        <ol class="lab-steps" id="pipelineSteps" role="status" aria-live="polite"></ol>
-
-        <!-- Verdict: filled by lab.js on completion -->
-        <div class="lab-verdict" id="verdict" hidden>
-          <div class="lab-verdict-badge" id="verdictBadge"></div>
-          <h3 id="verdictTitle"></h3>
-          <p id="verdictText"></p>
-          <div class="hero-actions">
-            <a class="primary-action" id="verdictCta" href="#">Open track analysis</a>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer class="site-footer" aria-label="Site footer">
-        <div class="footer-brand">
-          <img src="./assets/16-lab-logo.svg" alt="" />
-          <span><strong>16</strong>Lab</span>
-        </div>
-        <p>Decode every bar.</p>
-        <span class="footer-note">&copy; 2026 16 Lab</span>
-      </footer>
-    </main>
+        <section class="recents-section" aria-label="Recent decodes">
+          <header class="recents-head">
+            <h2>Recent decodes</h2>
+            <div class="recents-head-actions">
+              <a class="view-all" href="./decodes.html">View all <span aria-hidden="true">&rarr;</span></a>
+              <button class="state-toggle" id="stateToggle" type="button" aria-pressed="false">
+                View empty state
+              </button>
+            </div>
+          </header>
 
-    <script src="./lab.js"></script>
+          <div class="recents-grid" id="recentsGrid">
+            <a class="decode-card" href="./decode.html">
+              <span class="card-art">
+                <img src="./assets/tracks/starlight-cover.jpg" alt="Starlight artwork" />
+              </span>
+              <span class="card-meta">
+                <strong>Starlight</strong>
+                <span class="card-artist">Dave</span>
+              </span>
+              <span class="score-chip">87</span>
+            </a>
+
+            <a class="decode-card" href="./decode.html">
+              <span class="card-art cover-ph cover-ph--blue" aria-hidden="true"></span>
+              <span class="card-meta">
+                <strong>Sprinter</strong>
+                <span class="card-artist">Dave &amp; Central Cee</span>
+              </span>
+              <span class="score-chip">82</span>
+            </a>
+
+            <a class="decode-card" href="./decode.html">
+              <span class="card-art cover-ph cover-ph--orange" aria-hidden="true"></span>
+              <span class="card-meta">
+                <strong>Vossi Bop</strong>
+                <span class="card-artist">Stormzy</span>
+              </span>
+              <span class="score-chip">79</span>
+            </a>
+
+            <a class="decode-card" href="./decode.html">
+              <span class="card-art card-art-wave" aria-hidden="true">
+                <span style="--h: 36%"></span>
+                <span style="--h: 72%"></span>
+                <span style="--h: 48%"></span>
+                <span style="--h: 88%"></span>
+                <span style="--h: 56%"></span>
+                <span style="--h: 30%"></span>
+              </span>
+              <span class="card-meta">
+                <strong>Freestyle take 03</strong>
+                <span class="card-artist">Uploaded &middot; 1:42</span>
+              </span>
+              <span class="score-chip">74</span>
+            </a>
+          </div>
+
+          <div class="recents-empty" id="recentsEmpty" hidden>
+            <p>Nothing decoded yet &mdash; your first bar is one search away.</p>
+            <div class="empty-actions">
+              <button class="empty-action empty-action-search" type="button">Search a track</button>
+              <button class="empty-action empty-action-upload" type="button">Drop a freestyle</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var form = document.getElementById("searchForm");
+        var input = document.getElementById("lab-search");
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          var q = (input.value || "").trim();
+          window.location.href = "./results.html" + (q ? "?q=" + encodeURIComponent(q) : "");
+        });
+
+        var toggle = document.getElementById("stateToggle");
+        var grid = document.getElementById("recentsGrid");
+        var empty = document.getElementById("recentsEmpty");
+        toggle.addEventListener("click", function () {
+          var showEmpty = empty.hidden;
+          empty.hidden = !showEmpty;
+          grid.hidden = showEmpty;
+          toggle.setAttribute("aria-pressed", String(showEmpty));
+          toggle.textContent = showEmpty ? "View recents" : "View empty state";
+        });
+
+        var drop = document.getElementById("dropzone");
+        ["dragenter", "dragover"].forEach(function (evt) {
+          drop.addEventListener(evt, function (e) {
+            e.preventDefault();
+            drop.classList.add("is-dragover");
+          });
+        });
+        ["dragleave", "drop"].forEach(function (evt) {
+          drop.addEventListener(evt, function (e) {
+            e.preventDefault();
+            drop.classList.remove("is-dragover");
+          });
+        });
+
+        var emptySearch = document.querySelector(".empty-action-search");
+        var emptyUpload = document.querySelector(".empty-action-upload");
+        if (emptySearch) emptySearch.addEventListener("click", function () { input.focus(); });
+        if (emptyUpload) emptyUpload.addEventListener("click", function () { drop.focus(); });
+      })();
+    </script>
   </body>
 </html>
