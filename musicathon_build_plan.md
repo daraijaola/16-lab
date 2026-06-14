@@ -56,6 +56,13 @@ truth for released tracks, novelty-verifier for freestyles.
 - Bar-by-bar decode panel (Claude Opus, structured outputs — guaranteed JSON schema)
 - Scoring service (Python): rhyme density, internal rhymes, vocab richness,
   multisyllabic rate, syllable variance (pronouncing/CMUdict)
+- **Visible rhyme/flow highlighting** — the scoring service returns rhyme groups
+  mapped to text spans; the transcript colors end rhymes, internal rhymes and
+  multisyllabic chains, and tapping a metric reveals the spans behind it. Makes
+  the pen score tangible and proves the NLP is real (not just an LLM guess).
+- **Musixmatch mood/theme/genre context** — pull the track's mood, themes and
+  genre and show them as context chips, and feed them into the decode prompt.
+  Widens Musixmatch surface area beyond search + lyrics.get (depth-of-integration).
 - Shareable bar card (rendered image)
 - Job table + polling for async steps; **pre-processed cache for all 3 demo clips**
 
@@ -79,6 +86,7 @@ truth for released tracks, novelty-verifier for freestyles.
 | Slang correction LLM | Claude `claude-haiku-4-5` | $1/$5 per MTok; cheap high-volume pass over transcripts |
 | Scoring | Python (`pronouncing`, CMUdict, syllable libs) | Algorithmic metrics, deterministic — "same track, same score" |
 | App | Next.js (web) + FastAPI (api) monorepo | SQLite local / Postgres deploy; deploy on **Replit** (sponsor) |
+| LLM access | **Replit AI gateway** (proxy in front of the model) | Routes all Claude traffic through Replit so model access is billed to the Replit credits; keys live in **Replit Secrets** (server-only, never in repo/frontend); gateway dashboard tracks cost / requests / tokens per key. Opus 4.8 on the decode lane, Haiku on the correction lane. Keep a direct-key env var as demo-day fallback. |
 | Stretch enrichment | Cyanite V7 (GraphQL, async), Songstats (REST, `apikey` header) | Both need hackathon keys |
 
 OpenAI is dropped from the stack: Scribe is sponsor-deep, removes the 25MB

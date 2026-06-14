@@ -1,1 +1,5 @@
 assets/partners/page-*.html
+__pycache__/
+*.pyc
+.venv/
+backend/.env
