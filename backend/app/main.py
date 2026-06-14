@@ -39,15 +39,26 @@ def llm_ping():
         raise HTTPException(502, str(exc))
 
 
+class TrackMeta(BaseModel):
+    title: str | None = None
+    artist: str | None = None
+    mood: str | None = None
+    themes: list[str] | None = None
+
+
 class DecodeRequest(BaseModel):
-    text: str
-    context: str | None = None
+    # The front end sends the WHOLE lyric block plus the target index so the
+    # model reads the bar in context. Keep this contract (see decode.py).
+    lines: list[str]
+    target: int
+    track: TrackMeta | None = None
 
 
 @api.post("/decode/bar")
 def decode_bar(req: DecodeRequest):
     try:
-        return decode.decode_bar(req.text, req.context).model_dump()
+        track = req.track.model_dump() if req.track else None
+        return decode.decode_bar(req.lines, req.target, track).model_dump()
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     except llm.LLMError as exc:
