@@ -24,18 +24,24 @@ def messages(
     system: str | None = None,
     model: str | None = None,
     max_tokens: int = 1024,
-    temperature: float = 0.4,
+    temperature: float | None = None,
 ) -> dict:
-    """Call the gateway and return {"text": str, "model": str}."""
+    """Call the gateway and return {"text": str, "model": str}.
+
+    `temperature` is only sent when explicitly provided — some gateway/Vertex
+    deployments of Opus reject an explicit temperature, so we omit it by default
+    and let the model use its own.
+    """
     if not config.GATEWAY_KEY:
         raise LLMError("GATEWAY_KEY is not set")
 
     body: dict = {
         "model": model or config.DECODE_MODEL,
         "max_tokens": max_tokens,
-        "temperature": temperature,
         "messages": [{"role": "user", "content": user}],
     }
+    if temperature is not None:
+        body["temperature"] = temperature
     if system:
         body["system"] = system
 
@@ -63,5 +69,5 @@ def messages(
 
 def ping() -> dict:
     """Tiny call to confirm the gateway routes and which model answers."""
-    out = messages(user="Reply with exactly: gateway ok", max_tokens=16, temperature=0)
+    out = messages(user="Reply with exactly: gateway ok", max_tokens=16)
     return {"ok": "gateway ok" in out["text"].lower(), "model": out["model"]}
