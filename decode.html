@@ -545,6 +545,7 @@
               playBtn.querySelector("span").className="ico-play";
               fetch("/api/spotify/pause",{method:"PUT"}).catch(function(){});
             } else {
+              /* Optimistic play: update UI now, revert if Spotify rejects */
               _spBase=state.cur; _spAt=Date.now();
               state.playing=true;
               playBtn.classList.add("is-playing");
@@ -553,7 +554,26 @@
               fetch("/api/spotify/play",{
                 method:"PUT",headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({spotifyId:d.spotifyId})
-              }).catch(function(){});
+              })
+              .then(function(r){return r.ok?r.json():Promise.reject("http");})
+              .then(function(res){
+                if(!res.ok){
+                  state.playing=false;
+                  playBtn.classList.remove("is-playing");
+                  playBtn.setAttribute("aria-label","Play");
+                  playBtn.querySelector("span").className="ico-play";
+                  if(res.nonPremium){
+                    playerNote.textContent="Spotify Premium required for in-app play.";
+                    playerNote.hidden=false;
+                  }
+                }
+              })
+              .catch(function(){
+                state.playing=false;
+                playBtn.classList.remove("is-playing");
+                playBtn.setAttribute("aria-label","Play");
+                playBtn.querySelector("span").className="ico-play";
+              });
             }
           } else {
             setPlaying(!state.playing);
