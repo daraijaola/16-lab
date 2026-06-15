@@ -522,7 +522,9 @@
           playerNote.hidden=!(isSpotify&&state.connected);
           document.body.classList.add("has-dock");
           paintPlayer();activeKaraoke();
-          playBtn.querySelector("span").className="ico-play"; playBtn.classList.remove("is-playing");
+          playBtn.querySelector("span").className=state.playing?"ico-pause":"ico-play";
+          playBtn.classList.toggle("is-playing",state.playing);
+          playBtn.setAttribute("aria-label",state.playing?"Pause":"Play");
         }
 
         /* Spotify connect → OAuth */
@@ -545,35 +547,25 @@
               playBtn.querySelector("span").className="ico-play";
               fetch("/api/spotify/pause",{method:"PUT"}).catch(function(){});
             } else {
-              /* Optimistic play: update UI now, revert if Spotify rejects */
-              _spBase=state.cur; _spAt=Date.now();
-              state.playing=true;
-              playBtn.classList.add("is-playing");
-              playBtn.setAttribute("aria-label","Pause");
-              playBtn.querySelector("span").className="ico-pause";
+              /* Non-optimistic: only flip UI after Spotify confirms */
               fetch("/api/spotify/play",{
                 method:"PUT",headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({spotifyId:d.spotifyId})
               })
               .then(function(r){return r.ok?r.json():Promise.reject("http");})
               .then(function(res){
-                if(!res.ok){
-                  state.playing=false;
-                  playBtn.classList.remove("is-playing");
-                  playBtn.setAttribute("aria-label","Play");
-                  playBtn.querySelector("span").className="ico-play";
-                  if(res.nonPremium){
-                    playerNote.textContent="Spotify Premium required for in-app play.";
-                    playerNote.hidden=false;
-                  }
+                if(res.ok){
+                  _spBase=state.cur; _spAt=Date.now();
+                  state.playing=true;
+                  playBtn.classList.add("is-playing");
+                  playBtn.setAttribute("aria-label","Pause");
+                  playBtn.querySelector("span").className="ico-pause";
+                } else if(res.nonPremium){
+                  playerNote.textContent="Spotify Premium required for in-app play.";
+                  playerNote.hidden=false;
                 }
               })
-              .catch(function(){
-                state.playing=false;
-                playBtn.classList.remove("is-playing");
-                playBtn.setAttribute("aria-label","Play");
-                playBtn.querySelector("span").className="ico-play";
-              });
+              .catch(function(){});
             }
           } else {
             setPlaying(!state.playing);
@@ -641,14 +633,28 @@
             .then(function(sp){
               if(!sp.connected) return;
               state.connected=true;
-              renderDock();
-              /* Auto-play if not already on this track */
-              if(d.spotifyId&&(!sp.isPlaying||sp.trackId!==d.spotifyId)){
+              /* Sync play state BEFORE renderDock so the button renders correctly */
+              if(sp.isPlaying&&sp.trackId===d.spotifyId){
+                state.playing=true;
+                _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
+                if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
+              } else if(d.spotifyId&&!sp.isPlaying){
+                /* Auto-play: only if Spotify is idle (avoids interrupting other music) */
                 fetch("/api/spotify/play",{
                   method:"PUT",headers:{"Content-Type":"application/json"},
                   body:JSON.stringify({spotifyId:d.spotifyId})
+                })
+                .then(function(r){return r.ok?r.json():Promise.reject();})
+                .then(function(res){
+                  if(res.ok){
+                    state.playing=true; _spAt=Date.now();
+                    playBtn.classList.add("is-playing");
+                    playBtn.setAttribute("aria-label","Pause");
+                    playBtn.querySelector("span").className="ico-pause";
+                  }
                 }).catch(function(){});
               }
+              renderDock();
               startKaraokeSync();
             })
             .catch(function(){});
