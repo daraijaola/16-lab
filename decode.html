@@ -217,665 +217,410 @@
 
     <script>
       (function () {
-        /* ---------------- Mock data ---------------- */
-        var DATA = {
-          starlight: {
-            title: "Starlight",
-            artist: "Dave",
-            sub: "Starlight \u00b7 2022",
-            duration: "3:42",
-            score: 87,
-            cover: "./assets/tracks/starlight-cover.jpg",
-            audio: false,
-            feat: 1,
-            metrics: [
-              { label: "Rhyme density", v: 84 },
-              { label: "Internal rhymes", v: 79 },
-              { label: "Vocabulary richness", v: 91 },
-              { label: "Multisyllabic rate", v: 73 },
-              { label: "Syllable variance", v: 68 }
-            ],
-            sections: [
-              {
-                name: "Intro",
-                lines: [
-                  {
-                    t: 14,
-                    text: "Top down, city lights bleed into the rain",
-                    meaning: "Driving through the city at night \u2014 success and melancholy blur together behind the windscreen.",
-                    wordplay: "\u201cBleed\u201d paints the lights smearing across wet glass while hinting at the quiet pain under the glamour.",
-                    refs: ["Convertible imagery", "Noir cityscape"]
-                  },
-                  {
-                    t: 30,
-                    text: "I count my blessings quicker than I count the change",
-                    meaning: "Gratitude outpaces money; he values what he already has over what he earns.",
-                    wordplay: "\u201cCount\u201d pivots between counting blessings and counting cash; \u201cchange\u201d is coins and personal growth at once.",
-                    refs: ["Gratitude"],
-                    short: "Gratitude outpaces the money \u2014 and it always will."
-                  }
-                ]
-              },
-              {
-                name: "Verse 1",
-                lines: [
-                  {
-                    t: 58,
-                    text: "They want the crown but never felt the weight it brings",
-                    meaning: "People crave status without understanding the burden that comes attached to it.",
-                    wordplay: "Crown and weight nod to \u201cheavy is the head that wears the crown.\u201d",
-                    refs: ["Henry IV", "Uneasy crown"]
-                  },
-                  {
-                    t: 76,
-                    text: "I turned my pressure into pressure-treated things",
-                    meaning: "He converts stress into something durable, built to outlast the conditions that made it.",
-                    wordplay: "\u201cPressure-treated\u201d lumber resists rot \u2014 so pressure is both hardship and a manufacturing process.",
-                    refs: ["Carpentry"]
-                  },
-                  {
-                    t: 95,
-                    text: "Every L was just a letter in the bigger word",
-                    error: true
-                  },
-                  {
-                    t: 116,
-                    text: "Momma said the patient ones inherit earth",
-                    meaning: "Patience gets rewarded \u2014 delivered as remembered maternal wisdom.",
-                    wordplay: "Reworks \u201cthe meek shall inherit the earth\u201d into a lesson about patience.",
-                    refs: ["Matthew 5:5"]
-                  }
-                ]
-              },
-              {
-                name: "Hook",
-                lines: [
-                  {
-                    t: 150,
-                    text: "Starlight, I been chasing it my whole life",
-                    meaning: "Chasing a distant dream and fame that always stays a step ahead of him.",
-                    wordplay: "Starlight is fame and literal light \u2014 already years old by the time it reaches your eyes.",
-                    refs: ["Astronomy \u2014 light delay"]
-                  },
-                  {
-                    t: 172,
-                    text: "Cold nights turned the hunger into cold drive",
-                    meaning: "Hard times converted raw need into a relentless, almost ruthless ambition.",
-                    wordplay: "\u201cCold\u201d repeats \u2014 cold nights (hardship) against cold drive (detached focus).",
-                    refs: ["Ambition"]
-                  }
-                ]
-              }
-            ]
-          },
-          freestyle: {
-            title: "Freestyle \u2014 Untitled",
-            artist: "You",
-            sub: "Uploaded \u00b7 take 03",
-            duration: "1:42",
-            score: 74,
-            cover: "wave",
-            audio: true,
-            feat: 5,
-            metrics: [
-              { label: "Rhyme density", v: 71 },
-              { label: "Internal rhymes", v: 66 },
-              { label: "Vocabulary richness", v: 77 },
-              { label: "Multisyllabic rate", v: 80 },
-              { label: "Syllable variance", v: 62 }
-            ],
-            sections: [
-              {
-                name: "Intro",
-                lines: [
-                  {
-                    t: 0,
-                    text: "No beat picked, I'm just talking off the dome",
-                    meaning: "Pure improvisation \u2014 no instrumental, no preparation, just thought to mouth.",
-                    wordplay: "\u201cOff the dome\u201d is freestyle slang for rapping straight from the head.",
-                    refs: ["Cypher culture"]
-                  },
-                  {
-                    t: 6,
-                    text: "Mic in the kitchen, made a studio at home",
-                    meaning: "A DIY come-up \u2014 recording wherever the space allows.",
-                    wordplay: "Kitchen is the literal room and slang for where you \u201ccook\u201d the music.",
-                    refs: ["Bedroom studio era"]
-                  }
-                ]
-              },
-              {
-                name: "Verse 1",
-                lines: [
-                  {
-                    t: 13,
-                    text: "First take energy, I never write it twice",
-                    meaning: "He prizes raw spontaneity over polish and revision.",
-                    wordplay: "\u201cFirst take\u201d is a recording term; \u201cwrite it twice\u201d means no rewrites.",
-                    refs: ["One-take recording"]
-                  },
-                  {
-                    t: 20,
-                    text: "Every other bar I'm rolling double on the dice",
-                    meaning: "Alternating lines carry bigger and bigger risks \u2014 he keeps raising his own stakes.",
-                    wordplay: "\u201cBar\u201d is a lyric and a measure; \u201cdouble on the dice\u201d doubles the bet and lands doubles in craps.",
-                    refs: ["Craps"]
-                  },
-                  {
-                    t: 27,
-                    text: "Caught a rhythm in the static, let it breathe",
-                    error: true
-                  },
-                  {
-                    t: 34,
-                    text: "Freestyle therapy, cheaper than the fees",
-                    meaning: "Rapping as emotional release \u2014 a free alternative to a therapist's couch.",
-                    wordplay: "\u201cFees\u201d are therapy bills; a free-style is, literally, free.",
-                    refs: ["Catharsis"],
-                    short: "Rapping as release \u2014 the therapy you never pay for."
-                  }
-                ]
-              },
-              {
-                name: "Outro",
-                lines: [
-                  {
-                    t: 42,
-                    text: "Stop the tape right there, that's the one",
-                    meaning: "He recognises the perfect take the instant it happens.",
-                    wordplay: "\u201cStop the tape\u201d nods to analog recording; \u201cthe one\u201d is the keeper.",
-                    refs: ["Tape recording"]
-                  },
-                  {
-                    t: 49,
-                    text: "Untitled for now but the feeling's already won",
-                    meaning: "The song has no name yet, but it already feels like a victory.",
-                    wordplay: "\u201cUntitled\u201d against \u201cwon\u201d \u2014 a working title vs a win; won and one slant-rhyme.",
-                    refs: ["Working titles"]
-                  }
-                ]
-              }
-            ]
-          }
+        /* ── Helpers ─────────────────────────────────────────────── */
+        function esc(t) { return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+        function fmt(s) { var m=Math.floor(s/60),sec=Math.floor(s%60); return m+":"+(sec<10?"0":"")+sec; }
+        function durToSec(d) { var p=String(d).split(":"); return (+p[0])*60+(+p[1]); }
+
+        /* ── URL param ───────────────────────────────────────────── */
+        var trackId = new URLSearchParams(window.location.search).get("id") || "";
+
+        /* ── Freestyle mock (keeps the demo lane working) ────────── */
+        var FREESTYLE = {
+          title:"Freestyle — Untitled", artist:"You", duration:"1:42",
+          score:74, cover:"wave", audio:true, feat:3,
+          metrics:[
+            {label:"Rhyme density",v:71},{label:"Internal rhymes",v:66},
+            {label:"Vocabulary richness",v:77},{label:"Multisyllabic rate",v:80},
+            {label:"Syllable variance",v:62}
+          ],
+          sections:[{name:"Verse",lines:[
+            {t:0, text:"No beat picked, I’m just talking off the dome"},
+            {t:6, text:"Mic in the kitchen, made a studio at home"},
+            {t:13,text:"First take energy, I never write it twice"},
+            {t:20,text:"Every other bar I’m rolling double on the dice"},
+            {t:34,text:"Freestyle therapy, cheaper than the fees"},
+            {t:42,text:"Stop the tape right there, that’s the one"},
+            {t:49,text:"Untitled for now but the feeling’s already won"}
+          ]}]
         };
 
-        var TOTAL_SECONDS = 102; /* freestyle mock length 1:42 */
+        /* ── State ───────────────────────────────────────────────── */
+        var DATA  = { starlight: null, freestyle: FREESTYLE };
+        var TOTAL_SECONDS = 102;
+        var state = { lane:"starlight", selected:null, token:0, playing:false,
+                      cur:0, total:102, connected:false, timer:null, lastDecode:null };
 
-        /* ---------------- Elements ---------------- */
-        var head = document.getElementById("decodeHead");
-        var scroll = document.getElementById("transcriptScroll");
+        /* ── Elements ────────────────────────────────────────────── */
+        var head     = document.getElementById("decodeHead");
+        var scroll   = document.getElementById("transcriptScroll");
         var overview = document.getElementById("trackOverview");
-        var barDecode = document.getElementById("barDecode");
-        var playerBar = document.getElementById("playerBar");
-        var playerDock = document.getElementById("playerDock");
-        var spotifyConnect = document.getElementById("spotifyConnect");
-        var playerNote = document.getElementById("playerNote");
-        var playerThumb = document.getElementById("playerThumb");
-        var playerTitle = document.getElementById("playerTitle");
-        var playerArtist = document.getElementById("playerArtist");
-        var playerTotalEl = document.getElementById("playerTotal");
-        var playerSource = document.getElementById("playerSource");
-        var playerSourceLabel = document.getElementById("playerSourceLabel");
-        var hint = document.getElementById("transcriptHint");
-        var scrim = document.getElementById("sheetScrim");
-        var lanePills = Array.prototype.slice.call(document.querySelectorAll(".lane-switch [data-lane]"));
+        var barDecode= document.getElementById("barDecode");
+        var playerBar= document.getElementById("playerBar");
+        var spotifyConnect= document.getElementById("spotifyConnect");
+        var playerNote= document.getElementById("playerNote");
+        var playerThumb= document.getElementById("playerThumb");
+        var playerTitle= document.getElementById("playerTitle");
+        var playerArtist= document.getElementById("playerArtist");
+        var playerTotalEl= document.getElementById("playerTotal");
+        var playerSource= document.getElementById("playerSource");
+        var playerSourceLabel= document.getElementById("playerSourceLabel");
+        var hint     = document.getElementById("transcriptHint");
+        var scrim    = document.getElementById("sheetScrim");
+        var lanePills= Array.prototype.slice.call(document.querySelectorAll(".lane-switch [data-lane]"));
 
-        var state = { lane: "starlight", selected: null, token: 0, playing: false, cur: 0, total: 102, connected: false, timer: null };
-
-        function durToSec(d) {
-          var p = String(d).split(":");
-          return (+p[0]) * 60 + (+p[1]);
+        /* ── Loading / error banners ─────────────────────────────── */
+        function showLoading() {
+          head.innerHTML    = '<div class="decode-loading" style="padding:1.5rem;opacity:.6">Loading track…</div>';
+          scroll.innerHTML  = '<div class="decode-loading" style="padding:1.5rem;opacity:.6">Loading lyrics…</div>';
+          overview.innerHTML= '<div class="decode-loading" style="padding:1.5rem;opacity:.6">Loading score…</div>';
+        }
+        function showError(msg) {
+          head.innerHTML = '<div class="decode-error" style="padding:1.5rem"><span class="err-ico" aria-hidden="true">!</span><div><strong>'+esc(msg)+'</strong></div></div>';
+          scroll.innerHTML = overview.innerHTML = "";
         }
 
-        function fmt(s) {
-          var m = Math.floor(s / 60);
-          var sec = Math.floor(s % 60);
-          return m + ":" + (sec < 10 ? "0" : "") + sec;
-        }
-
-        function esc(t) {
-          return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        /* ---------------- Render: header ---------------- */
+        /* ── Render: header ──────────────────────────────────────── */
         function renderHead() {
           var d = DATA[state.lane];
-          var art = d.cover === "wave"
-            ? '<span class="head-art head-art-wave" aria-hidden="true">' +
-                [38, 74, 52, 90, 60, 34, 70].map(function (h) {
-                  return '<span style="--h:' + h + '%"></span>';
-                }).join("") +
-              "</span>"
-            : '<span class="head-art"><img src="' + d.cover + '" alt="' + esc(d.title) + ' artwork" /></span>';
-
+          var art = d.cover==="wave"
+            ? '<span class="head-art head-art-wave" aria-hidden="true">'+[38,74,52,90,60,34,70].map(function(h){return'<span style="--h:'+h+'%"></span>';}).join("")+'</span>'
+            : d.cover
+              ? '<span class="head-art"><img src="'+esc(d.cover)+'" alt="'+esc(d.title)+' artwork" /></span>'
+              : '<span class="head-art cover-ph" aria-hidden="true"></span>';
           var badge = d.audio
-            ? '<span class="head-badge head-badge--scribe"><span class="badge-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Transcribed \u00b7 Scribe</span>'
-            : '<span class="head-badge"><img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />Lyrics \u00b7 Musixmatch</span>';
-
+            ? '<span class="head-badge head-badge--scribe"><span class="badge-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Transcribed · Scribe</span>'
+            : '<span class="head-badge"><img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />Lyrics · Musixmatch</span>';
           head.innerHTML =
-            art +
-            '<div class="head-meta">' +
-              '<div class="head-titles">' +
-                "<h1>" + esc(d.title) + "</h1>" +
-                '<p class="head-artist">' + esc(d.artist) + "</p>" +
-              "</div>" +
-              '<div class="head-facts">' +
-                "<span>" + d.duration + "</span>" +
-                badge +
-              "</div>" +
-            "</div>" +
-            '<div class="head-aside">' +
-              '<div class="pen-score" title="Pen score">' +
-                '<span class="pen-glyph" aria-hidden="true"></span>' +
-                '<span class="pen-num">' + d.score + "</span>" +
-                '<span class="pen-cap">Pen score</span>' +
-              "</div>" +
-              '<button class="share-btn" type="button"><span class="share-ico" aria-hidden="true"></span>Share card</button>' +
-            "</div>";
+            art+
+            '<div class="head-meta">'+
+              '<div class="head-titles"><h1>'+esc(d.title)+'</h1><p class="head-artist">'+esc(d.artist)+'</p></div>'+
+              '<div class="head-facts"><span>'+d.duration+'</span>'+badge+'</div>'+
+            '</div>'+
+            '<div class="head-aside">'+
+              '<div class="pen-score" title="Pen score"><span class="pen-glyph" aria-hidden="true"></span><span class="pen-num">'+d.score+'</span><span class="pen-cap">Pen score</span></div>'+
+              '<button class="share-btn" type="button"><span class="share-ico" aria-hidden="true"></span>Share card</button>'+
+            '</div>';
         }
 
-        /* ---------------- Render: transcript ---------------- */
+        /* ── Render: transcript ──────────────────────────────────── */
         function renderTranscript() {
-          var d = DATA[state.lane];
-          var idx = 0;
-          var html = "";
-          d.sections.forEach(function (sec) {
-            html += '<div class="t-section">';
-            html += '<div class="t-section-label">' + esc(sec.name) + "</div>";
-            sec.lines.forEach(function (ln) {
-              var i = idx++;
-              html +=
-                '<button class="bar" type="button" data-i="' + i + '"' +
-                (typeof ln.t === "number" ? ' data-t="' + ln.t + '"' : "") +
-                (ln.error ? ' data-error="1"' : "") +
-                ">" +
-                '<span class="bar-text">' + esc(ln.text) + "</span>" +
-                '<span class="bar-spin" aria-hidden="true"><span></span><span></span><span></span>decoding\u2026</span>' +
-                "</button>";
+          var d = DATA[state.lane]; var idx=0; var html="";
+          d.sections.forEach(function(sec) {
+            html+='<div class="t-section"><div class="t-section-label">'+esc(sec.name)+'</div>';
+            sec.lines.forEach(function(ln) {
+              var i=idx++;
+              html+='<button class="bar" type="button" data-i="'+i+'"'+(typeof ln.t==="number"?' data-t="'+ln.t+'"':'')+'>'+
+                '<span class="bar-text">'+esc(ln.text)+'</span>'+
+                '<span class="bar-spin" aria-hidden="true"><span></span><span></span><span></span>decoding…</span>'+
+                '</button>';
             });
-            html += "</div>";
+            html+='</div>';
           });
-          scroll.innerHTML = html;
-
-          Array.prototype.forEach.call(scroll.querySelectorAll(".bar"), function (b) {
-            b.addEventListener("click", function () {
-              selectBar(parseInt(b.getAttribute("data-i"), 10), b);
-            });
+          scroll.innerHTML=html;
+          Array.prototype.forEach.call(scroll.querySelectorAll(".bar"),function(b){
+            b.addEventListener("click",function(){ selectBar(parseInt(b.getAttribute("data-i"),10),b); });
           });
         }
 
         function flatLines() {
-          var out = [];
-          DATA[state.lane].sections.forEach(function (s) {
-            s.lines.forEach(function (l) { out.push(l); });
-          });
-          return out;
+          var out=[]; DATA[state.lane].sections.forEach(function(s){s.lines.forEach(function(l){out.push(l);});}); return out;
         }
 
-        /* ---------------- Render: track overview ---------------- */
+        /* ── Render: overview ────────────────────────────────────── */
         function renderOverview() {
-          var d = DATA[state.lane];
-          var tiles = d.metrics.map(function (m) {
-            return (
-              '<div class="metric-tile">' +
-                '<div class="metric-top"><span class="metric-label">' + m.label + "</span>" +
-                '<span class="metric-num">' + m.v + "</span></div>" +
-                '<div class="metric-bar"><span style="width:' + m.v + '%"></span></div>' +
-              "</div>"
-            );
+          var d=DATA[state.lane];
+          var tiles=d.metrics.map(function(m){
+            return '<div class="metric-tile"><div class="metric-top"><span class="metric-label">'+m.label+'</span><span class="metric-num">'+m.v+'</span></div><div class="metric-bar"><span style="width:'+m.v+'%"></span></div></div>';
           }).join("");
-          overview.innerHTML =
-            '<div class="overview-top">' +
-              '<span class="overview-kicker">Track score</span>' +
-              '<div class="overview-score"><span class="big-score">' + d.score + '</span><span class="score-of">/ 100</span></div>' +
-              '<p class="overview-note">Weighted across five technical metrics. Tap a bar to see how it scored.</p>' +
-            "</div>" +
-            '<div class="metric-grid">' + tiles + "</div>";
+          overview.innerHTML=
+            '<div class="overview-top">'+
+              '<span class="overview-kicker">Track score</span>'+
+              '<div class="overview-score"><span class="big-score">'+d.score+'</span><span class="score-of">/ 100</span></div>'+
+              '<p class="overview-note">Weighted across five technical metrics. Tap a bar to decode it.</p>'+
+            '</div>'+
+            '<div class="metric-grid">'+tiles+'</div>';
         }
 
-        /* ---------------- Bar selection + thinking ---------------- */
+        /* ── Bar select → API decode ─────────────────────────────── */
         function selectBar(i, el) {
-          var lines = flatLines();
-          var ln = lines[i];
-          state.selected = i;
-
-          Array.prototype.forEach.call(scroll.querySelectorAll(".bar"), function (b) {
-            b.classList.toggle("is-selected", b === el);
-            b.classList.remove("is-thinking");
+          var lines=flatLines(); var ln=lines[i]; state.selected=i;
+          Array.prototype.forEach.call(scroll.querySelectorAll(".bar"),function(b){
+            b.classList.toggle("is-selected",b===el); b.classList.remove("is-thinking");
           });
           el.classList.add("is-thinking");
-
           document.body.classList.add("is-decoding");
-          scrim.hidden = false;
-
-          // thinking state in panel
-          barDecode.hidden = false;
-          overview.classList.add("is-dimmed");
-          barDecode.innerHTML =
-            '<div class="decode-grip" aria-hidden="true"></div>' +
-            '<div class="decode-thinking">' +
-              '<span class="think-dots"><span></span><span></span><span></span></span>' +
-              "<span>Decoding bar\u2026</span>" +
-            "</div>" +
+          scrim.hidden=false; barDecode.hidden=false; overview.classList.add("is-dimmed");
+          barDecode.innerHTML=
+            '<div class="decode-grip" aria-hidden="true"></div>'+
+            '<div class="decode-thinking"><span class="think-dots"><span></span><span></span><span></span></span><span>Decoding bar…</span></div>'+
             '<div class="think-skel"><span></span><span></span><span></span></div>';
 
-          var token = ++state.token;
-          setTimeout(function () {
-            if (token !== state.token) return;
-            el.classList.remove("is-thinking");
-            renderDecode(ln);
-          }, 850);
+          var token=++state.token;
+          var d=DATA[state.lane];
+          var allText=lines.map(function(l){return l.text;});
+
+          if (!d.audio) {
+            /* Catalog lane → live API */
+            fetch("/api/decode/bar",{
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({lines:allText, target:i, track:{title:d.title,artist:d.artist}})
+            })
+            .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
+            .then(function(res){
+              if (token!==state.token) return;
+              el.classList.remove("is-thinking");
+              renderDecodeResult(res, ln.text);
+            })
+            .catch(function(){
+              if (token!==state.token) return;
+              el.classList.remove("is-thinking");
+              renderDecodeError(ln.text);
+            });
+          } else {
+            /* Freestyle lane → short mock */
+            setTimeout(function(){
+              if (token!==state.token) return;
+              el.classList.remove("is-thinking");
+              renderDecodeResult({
+                meaning:"(mock) A plain read of: “"+ln.text+"”.",
+                wordplay:"No live decode for uploaded audio yet.",
+                references:[], cultural:null
+              }, ln.text);
+            }, 800);
+          }
         }
 
-        function renderDecode(ln) {
-          var d = DATA[state.lane];
-          var body;
-          if (ln.error) {
-            body =
-              '<div class="decode-error">' +
-                '<span class="err-ico" aria-hidden="true">!</span>' +
-                '<div><strong>Couldn\u2019t match this on Musixmatch.</strong>' +
-                "<p>Here\u2019s the raw transcript line \u2014 meaning, wordplay and references aren\u2019t available for unmatched bars yet.</p></div>" +
-              "</div>" +
-              '<div class="raw-line">' + esc(ln.text) + "</div>";
-          } else {
-            var refs = (ln.refs || []).map(function (r) {
-              return '<span class="ref-tag">' + esc(r) + "</span>";
-            }).join("");
-            body =
-              '<div class="decode-block"><span class="db-label">Meaning</span><p>' + esc(ln.meaning) + "</p></div>" +
-              '<div class="decode-block"><span class="db-label">Wordplay</span><p>' + esc(ln.wordplay) + "</p></div>" +
-              (refs ? '<div class="decode-block"><span class="db-label">References</span><div class="ref-row">' + refs + "</div></div>" : "");
-          }
+        function renderDecodeResult(res, barText) {
+          state.lastDecode={text:barText, meaning:res.meaning};
+          var refs=(res.references||[]).map(function(r){return'<span class="ref-tag">'+esc(r)+'</span>';}).join("");
+          var body=
+            '<div class="decode-block"><span class="db-label">Meaning</span><p>'+esc(res.meaning)+'</p></div>'+
+            '<div class="decode-block"><span class="db-label">Wordplay</span><p>'+esc(res.wordplay)+'</p></div>'+
+            (res.cultural?'<div class="decode-block"><span class="db-label">Cultural</span><p>'+esc(res.cultural)+'</p></div>':'')+
+            (refs?'<div class="decode-block"><span class="db-label">References</span><div class="ref-row">'+refs+'</div></div>':'');
+          barDecode.innerHTML=
+            '<div class="decode-grip" aria-hidden="true"></div>'+
+            '<div class="decode-head-row">'+
+              '<button class="back-overview" type="button"><span aria-hidden="true">←</span> Track overview</button>'+
+              '<button class="sheet-close" type="button" aria-label="Close">×</button>'+
+            '</div>'+
+            '<blockquote class="decoded-bar">'+esc(barText)+'</blockquote>'+body;
+          barDecode.querySelector(".back-overview").addEventListener("click",closeDecode);
+          var sc=barDecode.querySelector(".sheet-close"); if(sc) sc.addEventListener("click",closeDecode);
+        }
 
-          barDecode.innerHTML =
-            '<div class="decode-grip" aria-hidden="true"></div>' +
-            '<div class="decode-head-row">' +
-              '<button class="back-overview" type="button"><span aria-hidden="true">&larr;</span> Track overview</button>' +
-              '<button class="sheet-close" type="button" aria-label="Close">&times;</button>' +
-            "</div>" +
-            '<blockquote class="decoded-bar">' + esc(ln.text) + "</blockquote>" +
-            body;
-
-          barDecode.querySelector(".back-overview").addEventListener("click", closeDecode);
-          var sc = barDecode.querySelector(".sheet-close");
-          if (sc) sc.addEventListener("click", closeDecode);
+        function renderDecodeError(barText) {
+          barDecode.innerHTML=
+            '<div class="decode-grip" aria-hidden="true"></div>'+
+            '<div class="decode-head-row">'+
+              '<button class="back-overview" type="button"><span aria-hidden="true">←</span> Track overview</button>'+
+              '<button class="sheet-close" type="button" aria-label="Close">×</button>'+
+            '</div>'+
+            '<blockquote class="decoded-bar">'+esc(barText)+'</blockquote>'+
+            '<div class="decode-error"><span class="err-ico" aria-hidden="true">!</span>'+
+              '<div><strong>Decode failed.</strong><p>Check your connection or try a different bar.</p></div></div>';
+          barDecode.querySelector(".back-overview").addEventListener("click",closeDecode);
+          var sc=barDecode.querySelector(".sheet-close"); if(sc) sc.addEventListener("click",closeDecode);
         }
 
         function closeDecode() {
-          state.token++;
-          state.selected = null;
+          state.token++; state.selected=null;
           document.body.classList.remove("is-decoding");
-          scrim.hidden = true;
-          barDecode.hidden = true;
-          overview.classList.remove("is-dimmed");
-          Array.prototype.forEach.call(scroll.querySelectorAll(".bar"), function (b) {
-            b.classList.remove("is-selected", "is-thinking");
-          });
+          scrim.hidden=true; barDecode.hidden=true; overview.classList.remove("is-dimmed");
+          Array.prototype.forEach.call(scroll.querySelectorAll(".bar"),function(b){b.classList.remove("is-selected","is-thinking");});
         }
+        scrim.addEventListener("click",closeDecode);
 
-        scrim.addEventListener("click", closeDecode);
-
-        /* ---------------- Karaoke player (Lane A) ---------------- */
-        var playBtn = document.getElementById("playerPlay");
-        var fill = document.getElementById("playerFill");
-        var knob = document.getElementById("playerKnob");
-        var curEl = document.getElementById("playerCur");
-        var trackEl = document.getElementById("playerTrack");
+        /* ── Player ──────────────────────────────────────────────── */
+        var playBtn=document.getElementById("playerPlay");
+        var fill=document.getElementById("playerFill");
+        var knob=document.getElementById("playerKnob");
+        var curEl=document.getElementById("playerCur");
+        var trackEl=document.getElementById("playerTrack");
 
         function paintPlayer() {
-          var pct = (state.cur / TOTAL_SECONDS) * 100;
-          fill.style.width = pct + "%";
-          knob.style.left = pct + "%";
-          curEl.textContent = fmt(state.cur);
-          trackEl.setAttribute("aria-valuenow", Math.round(state.cur));
+          var pct=(state.cur/TOTAL_SECONDS)*100;
+          fill.style.width=pct+"%"; knob.style.left=pct+"%";
+          curEl.textContent=fmt(state.cur);
+          trackEl.setAttribute("aria-valuenow",Math.round(state.cur));
         }
-
         function activeKaraoke() {
-          var bars = scroll.querySelectorAll(".bar[data-t]");
-          var activeEl = null;
-          Array.prototype.forEach.call(bars, function (b) {
-            var t = parseFloat(b.getAttribute("data-t"));
-            b.classList.remove("is-karaoke");
-            if (t <= state.cur) activeEl = b;
+          var bars=scroll.querySelectorAll(".bar[data-t]"); var activeEl=null;
+          Array.prototype.forEach.call(bars,function(b){
+            var t=parseFloat(b.getAttribute("data-t")); b.classList.remove("is-karaoke");
+            if(t<=state.cur) activeEl=b;
           });
-          if (activeEl) {
+          if(activeEl){
             activeEl.classList.add("is-karaoke");
-            // auto-scroll the pane (desktop scroll container only)
-            if (scroll.scrollHeight > scroll.clientHeight + 4) {
-              var pr = scroll.getBoundingClientRect();
-              var br = activeEl.getBoundingClientRect();
-              var delta = (br.top - pr.top) - (scroll.clientHeight / 2 - activeEl.clientHeight / 2);
-              scroll.scrollTo({ top: scroll.scrollTop + delta, behavior: "smooth" });
+            if(scroll.scrollHeight>scroll.clientHeight+4){
+              var pr=scroll.getBoundingClientRect(),br=activeEl.getBoundingClientRect();
+              scroll.scrollTo({top:scroll.scrollTop+(br.top-pr.top)-(scroll.clientHeight/2-activeEl.clientHeight/2),behavior:"smooth"});
             }
           }
         }
-
         function setPlaying(on) {
-          state.playing = on;
-          playBtn.classList.toggle("is-playing", on);
-          playBtn.setAttribute("aria-label", on ? "Pause" : "Play");
-          playBtn.querySelector("span").className = on ? "ico-pause" : "ico-play";
-          if (on) {
-            state.timer = setInterval(function () {
-              state.cur += 0.25;
-              if (state.cur >= TOTAL_SECONDS) {
-                state.cur = TOTAL_SECONDS;
-                paintPlayer();
-                activeKaraoke();
-                setPlaying(false);
-                return;
-              }
-              paintPlayer();
-              activeKaraoke();
-            }, 250);
-          } else if (state.timer) {
-            clearInterval(state.timer);
-            state.timer = null;
-          }
+          state.playing=on; playBtn.classList.toggle("is-playing",on);
+          playBtn.setAttribute("aria-label",on?"Pause":"Play");
+          playBtn.querySelector("span").className=on?"ico-pause":"ico-play";
+          if(on){
+            state.timer=setInterval(function(){
+              state.cur+=0.25;
+              if(state.cur>=TOTAL_SECONDS){state.cur=TOTAL_SECONDS;paintPlayer();activeKaraoke();setPlaying(false);return;}
+              paintPlayer();activeKaraoke();
+            },250);
+          } else if(state.timer){clearInterval(state.timer);state.timer=null;}
         }
-
-        playBtn.addEventListener("click", function () { setPlaying(!state.playing); });
-
-        function seekFromEvent(e) {
-          var rect = trackEl.getBoundingClientRect();
-          var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-          var pct = Math.max(0, Math.min(1, x / rect.width));
-          state.cur = pct * TOTAL_SECONDS;
-          paintPlayer();
-          activeKaraoke();
+        playBtn.addEventListener("click",function(){setPlaying(!state.playing);});
+        function seekFromEvent(e){
+          var rect=trackEl.getBoundingClientRect();
+          var x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+          state.cur=Math.max(0,Math.min(1,x/rect.width))*TOTAL_SECONDS;
+          paintPlayer();activeKaraoke();
         }
-        trackEl.addEventListener("click", seekFromEvent);
-        trackEl.addEventListener("keydown", function (e) {
-          if (e.key === "ArrowRight") { state.cur = Math.min(TOTAL_SECONDS, state.cur + 3); paintPlayer(); activeKaraoke(); }
-          if (e.key === "ArrowLeft") { state.cur = Math.max(0, state.cur - 3); paintPlayer(); activeKaraoke(); }
+        trackEl.addEventListener("click",seekFromEvent);
+        trackEl.addEventListener("keydown",function(e){
+          if(e.key==="ArrowRight"){state.cur=Math.min(TOTAL_SECONDS,state.cur+3);paintPlayer();activeKaraoke();}
+          if(e.key==="ArrowLeft"){state.cur=Math.max(0,state.cur-3);paintPlayer();activeKaraoke();}
         });
 
-        /* ---------------- Playback dock ---------------- */
+        /* ── Playback dock ───────────────────────────────────────── */
         function renderDock() {
-          var d = DATA[state.lane];
-          state.total = durToSec(d.duration);
-          TOTAL_SECONDS = state.total;
-          trackEl.setAttribute("aria-valuemax", state.total);
-          var isSpotify = !d.audio; /* catalog → Spotify; freestyle → uploaded file */
-
-          // thumbnail
-          if (d.cover === "wave") {
-            playerThumb.className = "player-thumb player-thumb-wave";
-            playerThumb.innerHTML = [38, 72, 52, 88, 60, 34].map(function (h) {
-              return '<span style="--h:' + h + '%"></span>';
-            }).join("");
+          var d=DATA[state.lane];
+          state.total=durToSec(d.duration); TOTAL_SECONDS=state.total;
+          trackEl.setAttribute("aria-valuemax",state.total);
+          var isSpotify=!d.audio;
+          if(d.cover==="wave"){
+            playerThumb.className="player-thumb player-thumb-wave";
+            playerThumb.innerHTML=[38,72,52,88,60,34].map(function(h){return'<span style="--h:'+h+'%"></span>';}).join("");
+          } else if(d.cover){
+            playerThumb.className="player-thumb";
+            playerThumb.innerHTML='<img src="'+esc(d.cover)+'" alt="" />';
           } else {
-            playerThumb.className = "player-thumb";
-            playerThumb.innerHTML = '<img src="' + d.cover + '" alt="" />';
+            playerThumb.className="player-thumb cover-ph"; playerThumb.innerHTML="";
           }
-          playerTitle.textContent = d.title;
-          playerArtist.textContent = d.artist;
-          playerTotalEl.textContent = d.duration;
-
-          // source tag
-          if (isSpotify) {
-            playerSource.classList.remove("is-local");
-            playerSourceLabel.textContent = "via Spotify";
-          } else {
-            playerSource.classList.add("is-local");
-            playerSourceLabel.textContent = "Synced transcript";
-          }
-
-          // state machine: catalog starts un-connected; freestyle plays directly
-          var showConnect = isSpotify && !state.connected;
-          spotifyConnect.hidden = !showConnect;
-          playerBar.hidden = showConnect;
-          playerNote.hidden = !(isSpotify && state.connected);
-
+          playerTitle.textContent=d.title; playerArtist.textContent=d.artist; playerTotalEl.textContent=d.duration;
+          playerSource.classList.toggle("is-local",!isSpotify);
+          playerSourceLabel.textContent=isSpotify?"via Spotify":"Synced transcript";
+          var showConnect=isSpotify&&!state.connected;
+          spotifyConnect.hidden=!showConnect; playerBar.hidden=showConnect;
+          playerNote.hidden=!(isSpotify&&state.connected);
           document.body.classList.add("has-dock");
-
-          paintPlayer();
-          activeKaraoke();
-          playBtn.querySelector("span").className = "ico-play";
-          playBtn.classList.remove("is-playing");
+          paintPlayer();activeKaraoke();
+          playBtn.querySelector("span").className="ico-play"; playBtn.classList.remove("is-playing");
         }
 
-        spotifyConnect.addEventListener("click", function () {
-          state.connected = true;
-          renderDock();
+        /* Spotify connect → OAuth */
+        spotifyConnect.addEventListener("click",function(){
+          if(trackId) document.cookie="16lab_track="+encodeURIComponent(trackId)+";path=/;max-age=600;SameSite=Lax;Secure";
+          window.location.href="/api/spotify/login";
         });
 
-        /* ---------------- Lane switching ---------------- */
-        function setLane(lane) {
-          if (state.timer) { clearInterval(state.timer); state.timer = null; }
-          state.lane = lane;
-          state.playing = false;
-          state.cur = 0;
-          state.selected = null;
-          state.connected = false;
-          state.token++;
+        /* ── Lane switching ──────────────────────────────────────── */
+        function renderLane() {
+          if(state.timer){clearInterval(state.timer);state.timer=null;}
+          state.playing=false;state.cur=0;state.selected=null;state.connected=false;state.token++;
           closeDecode();
-
-          lanePills.forEach(function (p) {
-            p.classList.toggle("is-active", p.getAttribute("data-lane") === lane);
-          });
-
-          var hasAudio = DATA[lane].audio;
-          document.body.classList.toggle("lane-audio", hasAudio);
-          hint.textContent = hasAudio
-            ? "Press play, or tap any bar to decode"
-            : "Connect to play, or tap any bar to decode";
-
-          renderHead();
-          renderTranscript();
-          renderOverview();
-          renderDock();
-          window.scrollTo(0, 0);
+          var d=DATA[state.lane];
+          document.body.classList.toggle("lane-audio",!!d.audio);
+          hint.textContent=d.audio?"Press play, or tap any bar to decode":"Connect to play, or tap any bar to decode";
+          renderHead();renderTranscript();renderOverview();renderDock();
+          window.scrollTo(0,0);
         }
-
-        lanePills.forEach(function (p) {
-          p.addEventListener("click", function () { setLane(p.getAttribute("data-lane")); });
-        });
-
-        /* ---------------- Share card modal ---------------- */
-        var modal = document.getElementById("shareModal");
-        var shareCard = document.getElementById("shareCard");
-        var scScore = document.getElementById("scScore");
-        var scQuote = document.getElementById("scQuote");
-        var scDecode = document.getElementById("scDecode");
-        var scTrack = document.getElementById("scTrack");
-        var scArtist = document.getElementById("scArtist");
-        var scCover = document.getElementById("scCover");
-
-        function condense(ln) {
-          if (ln.short) return ln.short;
-          var m = ln.meaning || "";
-          var i = m.indexOf(". ");
-          return i > 0 ? m.slice(0, i + 1) : m;
+        function setLane(lane) {
+          lanePills.forEach(function(p){p.classList.toggle("is-active",p.getAttribute("data-lane")===lane);});
+          state.lane=lane;
+          if(lane==="starlight"&&!DATA.starlight) loadCatalogTrack();
+          else renderLane();
         }
+        lanePills.forEach(function(p){p.addEventListener("click",function(){setLane(p.getAttribute("data-lane"));});});
 
-        function featuredLine() {
-          var lines = flatLines();
-          if (state.selected != null && lines[state.selected] && !lines[state.selected].error) {
-            return lines[state.selected];
+        /* ── Load catalog track from API ─────────────────────────── */
+        function loadCatalogTrack() {
+          if(!trackId){
+            head.innerHTML='<div style="padding:1.5rem;opacity:.6">No track selected — <a href="./lab.html">search one</a>.</div>';
+            scroll.innerHTML=overview.innerHTML=""; return;
           }
-          return lines[DATA[state.lane].feat];
+          showLoading();
+          var trackData=null,scoreData=null,done=0;
+          function tryBuild(){
+            if(++done<2) return;
+            if(!trackData){showError("Couldn’t load track — go back and try another.");return;}
+            var metrics=(scoreData&&scoreData.metrics||[]).map(function(m){return{label:m.label,v:m.value};});
+            DATA.starlight={
+              id:trackData.id, title:trackData.title, artist:trackData.artist,
+              duration:trackData.durationSec?fmt(trackData.durationSec):"0:00",
+              score:(scoreData&&scoreData.score)||0,
+              cover:trackData.coverUrl||null, audio:false, feat:0,
+              spotifyId:trackData.spotifyId||null,
+              metrics:metrics, sections:trackData.sections
+            };
+            renderLane();
+          }
+          fetch("/api/track/"+encodeURIComponent(trackId))
+            .then(function(r){return r.ok?r.json():Promise.reject();})
+            .then(function(d){trackData=d;tryBuild();})
+            .catch(function(){tryBuild();});
+          fetch("/api/track/"+encodeURIComponent(trackId)+"/score")
+            .then(function(r){return r.ok?r.json():Promise.reject();})
+            .then(function(d){scoreData=d;tryBuild();})
+            .catch(function(){tryBuild();});
         }
 
-        function paintShare() {
-          var d = DATA[state.lane];
-          var ln = featuredLine();
-          scScore.textContent = d.score;
-          scQuote.textContent = ln.text;
-          scDecode.textContent = condense(ln);
-          scTrack.textContent = d.title;
-          scArtist.textContent = d.artist;
-          scCover.innerHTML = d.cover === "wave"
-            ? '<span class="sc-wave">' +
-                [42, 74, 54, 90, 62].map(function (h) {
-                  return '<span style="--h:' + h + '%"></span>';
-                }).join("") +
-              "</span>"
-            : '<img src="' + d.cover + '" alt="" />';
-          // scale hero to bar length
-          var len = ln.text.length;
-          shareCard.style.setProperty("--hero", len > 48 ? "6.8cqw" : len > 34 ? "7.8cqw" : "9cqw");
-        }
+        /* ── Share card ──────────────────────────────────────────── */
+        var modal    =document.getElementById("shareModal");
+        var shareCard=document.getElementById("shareCard");
+        var scScore  =document.getElementById("scScore");
+        var scQuote  =document.getElementById("scQuote");
+        var scDecode =document.getElementById("scDecode");
+        var scTrack  =document.getElementById("scTrack");
+        var scArtist =document.getElementById("scArtist");
+        var scCover  =document.getElementById("scCover");
 
-        function openShare() {
-          paintShare();
-          modal.hidden = false;
-          document.body.classList.add("share-open");
+        function featuredLine(){
+          var lines=flatLines();
+          if(state.selected!=null&&lines[state.selected]) return lines[state.selected];
+          return lines[DATA[state.lane].feat]||lines[0]||{text:""};
         }
-        function closeShare() {
-          modal.hidden = true;
-          document.body.classList.remove("share-open");
+        function paintShare(){
+          var d=DATA[state.lane]; var ln=featuredLine();
+          var meaning=(state.lastDecode&&state.lastDecode.text===ln.text&&state.lastDecode.meaning)||ln.text;
+          scScore.textContent=d.score; scQuote.textContent=ln.text; scDecode.textContent=meaning;
+          scTrack.textContent=d.title; scArtist.textContent=d.artist;
+          scCover.innerHTML=d.cover==="wave"
+            ?'<span class="sc-wave">'+[42,74,54,90,62].map(function(h){return'<span style="--h:'+h+'%"></span>';}).join("")+'</span>'
+            :d.cover?'<img src="'+esc(d.cover)+'" alt="" />':'';
+          var len=ln.text.length;
+          shareCard.style.setProperty("--hero",len>48?"6.8cqw":len>34?"7.8cqw":"9cqw");
         }
-
-        head.addEventListener("click", function (e) {
-          if (e.target.closest(".share-btn")) openShare();
-        });
-        document.getElementById("shareClose").addEventListener("click", closeShare);
-        document.getElementById("shareOverlay").addEventListener("click", closeShare);
-        document.addEventListener("keydown", function (e) {
-          if (e.key === "Escape" && !modal.hidden) closeShare();
-        });
-
-        // style presets
-        Array.prototype.forEach.call(modal.querySelectorAll(".style-pill"), function (p) {
-          p.addEventListener("click", function () {
-            Array.prototype.forEach.call(modal.querySelectorAll(".style-pill"), function (q) {
-              q.classList.toggle("is-active", q === p);
-            });
-            shareCard.className = "share-card share-card--" + p.getAttribute("data-style");
+        function openShare(){paintShare();modal.hidden=false;document.body.classList.add("share-open");}
+        function closeShare(){modal.hidden=true;document.body.classList.remove("share-open");}
+        head.addEventListener("click",function(e){if(e.target.closest(".share-btn"))openShare();});
+        document.getElementById("shareClose").addEventListener("click",closeShare);
+        document.getElementById("shareOverlay").addEventListener("click",closeShare);
+        document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!modal.hidden)closeShare();});
+        Array.prototype.forEach.call(modal.querySelectorAll(".style-pill"),function(p){
+          p.addEventListener("click",function(){
+            Array.prototype.forEach.call(modal.querySelectorAll(".style-pill"),function(q){q.classList.toggle("is-active",q===p);});
+            shareCard.className="share-card share-card--"+p.getAttribute("data-style");
           });
         });
-
-        // action feedback
-        function flash(btn, text) {
-          var lbl = btn.querySelector(".sa-lbl");
-          if (!lbl) return;
-          if (btn.dataset.busy) return;
-          btn.dataset.busy = "1";
-          var prev = lbl.textContent;
-          btn.classList.add("is-done");
-          lbl.textContent = text;
-          setTimeout(function () {
-            lbl.textContent = prev;
-            btn.classList.remove("is-done");
-            delete btn.dataset.busy;
-          }, 1500);
+        function flash(btn,text){
+          var lbl=btn.querySelector(".sa-lbl"); if(!lbl||btn.dataset.busy) return;
+          btn.dataset.busy="1"; var prev=lbl.textContent;
+          btn.classList.add("is-done"); lbl.textContent=text;
+          setTimeout(function(){lbl.textContent=prev;btn.classList.remove("is-done");delete btn.dataset.busy;},1500);
         }
-        document.getElementById("saCopy").addEventListener("click", function () {
-          var url = "https://16lab.app/d/" + state.lane + "-" + DATA[state.lane].score;
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).catch(function () {});
-          }
-          flash(this, "Link copied");
+        document.getElementById("saCopy").addEventListener("click",function(){
+          if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(window.location.href).catch(function(){});
+          flash(this,"Link copied");
         });
-        document.getElementById("saDownload").addEventListener("click", function () {
-          flash(this, "Preparing\u2026");
-        });
-        document.getElementById("saX").addEventListener("click", function () { flash(this, "Opening X\u2026"); });
-        document.getElementById("saIg").addEventListener("click", function () { flash(this, "Opening\u2026"); });
+        document.getElementById("saDownload").addEventListener("click",function(){flash(this,"Preparing…");});
+        document.getElementById("saX").addEventListener("click",function(){flash(this,"Opening X…");});
+        document.getElementById("saIg").addEventListener("click",function(){flash(this,"Opening…");});
 
-        // init
+        /* ── Init ────────────────────────────────────────────────── */
         setLane("starlight");
       })();
     </script>
