@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="16 Lab logo">
-  <circle cx="74" cy="86" r="38" fill="#06131f"/>
-  <rect x="46" y="78" width="10" height="18" rx="5" fill="#fffaf0"/>
-  <rect x="64" y="66" width="10" height="42" rx="5" fill="#fffaf0"/>
-  <rect x="82" y="56" width="10" height="62" rx="5" fill="#fffaf0"/>
-  <rect x="100" y="72" width="10" height="30" rx="5" fill="#fffaf0"/>
-  <path d="M128 26C130 38 140 48 152 50C140 52 130 62 128 74C126 62 116 52 104 50C116 48 126 38 128 26Z" fill="#06131f"/>
+  <circle cx="74" cy="86" r="38" fill="#06131f"></circle>
+  <rect x="46" y="78" width="10" height="18" rx="5" fill="#fffaf0"></rect>
+  <rect x="64" y="66" width="10" height="42" rx="5" fill="#fffaf0"></rect>
+  <rect x="82" y="56" width="10" height="62" rx="5" fill="#fffaf0"></rect>
+  <rect x="100" y="72" width="10" height="30" rx="5" fill="#fffaf0"></rect>
+  <path d="M128 26C130 38 140 48 152 50C140 52 130 62 128 74C126 62 116 52 104 50C116 48 126 38 128 26Z" fill="#06131f"></path>
 </svg>

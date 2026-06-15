@@ -50,18 +50,52 @@
         <!-- Header strip -->
         <header class="decode-head" id="decodeHead"></header>
 
-        <!-- Player bar (Lane A only) -->
-        <div class="player-bar" id="playerBar" hidden>
-          <button class="player-play" id="playerPlay" type="button" aria-label="Play">
-            <span class="ico-play" aria-hidden="true"></span>
+        <!-- Playback dock — catalog (Spotify) + freestyle (uploaded) -->
+        <div class="player-dock" id="playerDock">
+          <!-- State 1 · Spotify not connected (catalog default) -->
+          <button class="spotify-connect" id="spotifyConnect" type="button" hidden>
+            <span class="sp-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26">
+                <circle cx="12" cy="12" r="12" fill="#1DB954"></circle>
+                <path d="M5.6 9.2c4.3-1.3 9.2-.9 13 1.4M6.5 12.7c3.5-1.1 7.4-.7 10.4 1.1M7.3 16c2.7-.8 5.6-.5 8 1" stroke="#06131f" stroke-width="1.7" stroke-linecap="round" fill="none"></path>
+              </svg>
+            </span>
+            <span class="sp-connect-copy">
+              <strong>Connect Spotify to play</strong>
+              <span>Play the full track and watch the lyrics light up in time.</span>
+            </span>
+            <span class="sp-connect-cta" aria-hidden="true">Connect</span>
           </button>
-          <span class="player-time" id="playerCur">0:00</span>
-          <div class="player-track" id="playerTrack" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="102" aria-valuenow="0">
-            <span class="player-fill" id="playerFill"></span>
-            <span class="player-knob" id="playerKnob"></span>
+
+          <!-- State 2/3 · Player bar (connected) -->
+          <div class="player-bar" id="playerBar" hidden>
+            <span class="player-thumb" id="playerThumb" aria-hidden="true"></span>
+            <span class="player-now">
+              <strong class="player-title" id="playerTitle">Starlight</strong>
+              <span class="player-sub" id="playerArtist">Dave</span>
+            </span>
+            <button class="player-play" id="playerPlay" type="button" aria-label="Play">
+              <span class="ico-play" aria-hidden="true"></span>
+            </button>
+            <span class="player-time" id="playerCur">0:00</span>
+            <div class="player-track" id="playerTrack" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="222" aria-valuenow="0">
+              <span class="player-fill" id="playerFill"></span>
+              <span class="player-knob" id="playerKnob"></span>
+            </div>
+            <span class="player-time player-total" id="playerTotal">3:42</span>
+            <span class="player-source" id="playerSource">
+              <span class="sp-glyph-sm" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="15" height="15">
+                  <circle cx="12" cy="12" r="12" fill="#1DB954"></circle>
+                  <path d="M5.6 9.2c4.3-1.3 9.2-.9 13 1.4M6.5 12.7c3.5-1.1 7.4-.7 10.4 1.1M7.3 16c2.7-.8 5.6-.5 8 1" stroke="#06131f" stroke-width="1.7" stroke-linecap="round" fill="none"></path>
+                </svg>
+              </span>
+              <span id="playerSourceLabel">via Spotify</span>
+            </span>
           </div>
-          <span class="player-time player-total" id="playerTotal">1:42</span>
-          <span class="player-tag">Synced transcript</span>
+
+          <!-- Free-user note (catalog, connected) -->
+          <p class="player-note" id="playerNote" hidden>Playing on your Spotify &mdash; Premium needed for in-app controls.</p>
         </div>
 
         <!-- Body: transcript + right column -->
@@ -183,19 +217,7 @@
 
     <script>
       (function () {
-        /* ----------------------------------------------------------------
-         * Spotify karaoke + live track loader
-         * ----------------------------------------------------------------
-         * On load:
-         *   1. Read ?id= from URL → GET /api/track/{id} → store in liveTrack
-         *   2. Render head/transcript/overview from liveTrack (or mock fallback)
-         * Play button:
-         *   1. GET /api/spotify/now → if not connected, redirect to /api/spotify/login
-         *   2. PUT /api/spotify/play {spotifyId}
-         *   3. Poll /api/spotify/now every ~1 s; drive karaoke from progressMs
-         * ---------------------------------------------------------------- */
-
-        /* ---------------- Mock data (fallback when no ?id= or API down) ---------------- */
+        /* ---------------- Mock data ---------------- */
         var DATA = {
           starlight: {
             title: "Starlight",
@@ -218,12 +240,14 @@
                 name: "Intro",
                 lines: [
                   {
+                    t: 14,
                     text: "Top down, city lights bleed into the rain",
                     meaning: "Driving through the city at night \u2014 success and melancholy blur together behind the windscreen.",
                     wordplay: "\u201cBleed\u201d paints the lights smearing across wet glass while hinting at the quiet pain under the glamour.",
                     refs: ["Convertible imagery", "Noir cityscape"]
                   },
                   {
+                    t: 30,
                     text: "I count my blessings quicker than I count the change",
                     meaning: "Gratitude outpaces money; he values what he already has over what he earns.",
                     wordplay: "\u201cCount\u201d pivots between counting blessings and counting cash; \u201cchange\u201d is coins and personal growth at once.",
@@ -236,22 +260,26 @@
                 name: "Verse 1",
                 lines: [
                   {
+                    t: 58,
                     text: "They want the crown but never felt the weight it brings",
                     meaning: "People crave status without understanding the burden that comes attached to it.",
                     wordplay: "Crown and weight nod to \u201cheavy is the head that wears the crown.\u201d",
                     refs: ["Henry IV", "Uneasy crown"]
                   },
                   {
+                    t: 76,
                     text: "I turned my pressure into pressure-treated things",
                     meaning: "He converts stress into something durable, built to outlast the conditions that made it.",
                     wordplay: "\u201cPressure-treated\u201d lumber resists rot \u2014 so pressure is both hardship and a manufacturing process.",
                     refs: ["Carpentry"]
                   },
                   {
+                    t: 95,
                     text: "Every L was just a letter in the bigger word",
                     error: true
                   },
                   {
+                    t: 116,
                     text: "Momma said the patient ones inherit earth",
                     meaning: "Patience gets rewarded \u2014 delivered as remembered maternal wisdom.",
                     wordplay: "Reworks \u201cthe meek shall inherit the earth\u201d into a lesson about patience.",
@@ -263,12 +291,14 @@
                 name: "Hook",
                 lines: [
                   {
+                    t: 150,
                     text: "Starlight, I been chasing it my whole life",
                     meaning: "Chasing a distant dream and fame that always stays a step ahead of him.",
                     wordplay: "Starlight is fame and literal light \u2014 already years old by the time it reaches your eyes.",
                     refs: ["Astronomy \u2014 light delay"]
                   },
                   {
+                    t: 172,
                     text: "Cold nights turned the hunger into cold drive",
                     meaning: "Hard times converted raw need into a relentless, almost ruthless ambition.",
                     wordplay: "\u201cCold\u201d repeats \u2014 cold nights (hardship) against cold drive (detached focus).",
@@ -377,11 +407,25 @@
         var overview = document.getElementById("trackOverview");
         var barDecode = document.getElementById("barDecode");
         var playerBar = document.getElementById("playerBar");
+        var playerDock = document.getElementById("playerDock");
+        var spotifyConnect = document.getElementById("spotifyConnect");
+        var playerNote = document.getElementById("playerNote");
+        var playerThumb = document.getElementById("playerThumb");
+        var playerTitle = document.getElementById("playerTitle");
+        var playerArtist = document.getElementById("playerArtist");
+        var playerTotalEl = document.getElementById("playerTotal");
+        var playerSource = document.getElementById("playerSource");
+        var playerSourceLabel = document.getElementById("playerSourceLabel");
         var hint = document.getElementById("transcriptHint");
         var scrim = document.getElementById("sheetScrim");
         var lanePills = Array.prototype.slice.call(document.querySelectorAll(".lane-switch [data-lane]"));
 
-        var state = { lane: "starlight", selected: null, token: 0, playing: false, cur: 0, timer: null };
+        var state = { lane: "starlight", selected: null, token: 0, playing: false, cur: 0, total: 102, connected: false, timer: null };
+
+        function durToSec(d) {
+          var p = String(d).split(":");
+          return (+p[0]) * 60 + (+p[1]);
+        }
 
         function fmt(s) {
           var m = Math.floor(s / 60);
@@ -516,78 +560,15 @@
             '<div class="think-skel"><span></span><span></span><span></span></div>';
 
           var token = ++state.token;
-
-          // The deliberately-unmatched demo bar keeps the Musixmatch "no match" UI.
-          if (ln.error) {
-            setTimeout(function () {
-              if (token !== state.token) return;
-              el.classList.remove("is-thinking");
-              renderDecode(ln);
-            }, 650);
-            return;
-          }
-
-          // Live decode: send the WHOLE lyric block + target index + track so the
-          // model reads the bar in full context. Fall back to the local mock decode
-          // if the API is unavailable, so the page never breaks.
-          var d = DATA[state.lane];
-          fetch("/api/decode/bar", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              lines: lines.map(function (l) { return l.text; }),
-              target: i,
-              track: { title: d.title, artist: d.artist }
-            })
-          })
-            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-            .then(function (data) {
-              if (token !== state.token) return;
-              el.classList.remove("is-thinking");
-              renderDecodeData(ln.text, data);
-            })
-            .catch(function () {
-              if (token !== state.token) return;
-              el.classList.remove("is-thinking");
-              renderDecode(ln);
-            });
+          setTimeout(function () {
+            if (token !== state.token) return;
+            el.classList.remove("is-thinking");
+            renderDecode(ln);
+          }, 850);
         }
 
-        function paintDecode(barText, bodyHtml) {
-          barDecode.innerHTML =
-            '<div class="decode-grip" aria-hidden="true"></div>' +
-            '<div class="decode-head-row">' +
-              '<button class="back-overview" type="button"><span aria-hidden="true">&larr;</span> Track overview</button>' +
-              '<button class="sheet-close" type="button" aria-label="Close">&times;</button>' +
-            "</div>" +
-            '<blockquote class="decoded-bar">' + esc(barText) + "</blockquote>" +
-            bodyHtml;
-          barDecode.querySelector(".back-overview").addEventListener("click", closeDecode);
-          var sc = barDecode.querySelector(".sheet-close");
-          if (sc) sc.addEventListener("click", closeDecode);
-        }
-
-        function refsRow(arr) {
-          var refs = (arr || []).map(function (r) {
-            return '<span class="ref-tag">' + esc(r) + "</span>";
-          }).join("");
-          return refs
-            ? '<div class="decode-block"><span class="db-label">References</span><div class="ref-row">' + refs + "</div></div>"
-            : "";
-        }
-
-        // Render from the live API shape: { meaning, wordplay, references, cultural }.
-        function renderDecodeData(barText, data) {
-          var body =
-            '<div class="decode-block"><span class="db-label">Meaning</span><p>' + esc(data.meaning || "") + "</p></div>" +
-            '<div class="decode-block"><span class="db-label">Wordplay</span><p>' + esc(data.wordplay || "") + "</p></div>" +
-            refsRow(data.references) +
-            (data.cultural ? '<div class="decode-block"><span class="db-label">Cultural</span><p>' + esc(data.cultural) + "</p></div>" : "");
-          paintDecode(barText, body);
-        }
-
-        // Render from the local mock line object (fallback + unmatched bars).
         function renderDecode(ln) {
+          var d = DATA[state.lane];
           var body;
           if (ln.error) {
             body =
@@ -598,12 +579,27 @@
               "</div>" +
               '<div class="raw-line">' + esc(ln.text) + "</div>";
           } else {
+            var refs = (ln.refs || []).map(function (r) {
+              return '<span class="ref-tag">' + esc(r) + "</span>";
+            }).join("");
             body =
               '<div class="decode-block"><span class="db-label">Meaning</span><p>' + esc(ln.meaning) + "</p></div>" +
               '<div class="decode-block"><span class="db-label">Wordplay</span><p>' + esc(ln.wordplay) + "</p></div>" +
-              refsRow(ln.refs);
+              (refs ? '<div class="decode-block"><span class="db-label">References</span><div class="ref-row">' + refs + "</div></div>" : "");
           }
-          paintDecode(ln.text, body);
+
+          barDecode.innerHTML =
+            '<div class="decode-grip" aria-hidden="true"></div>' +
+            '<div class="decode-head-row">' +
+              '<button class="back-overview" type="button"><span aria-hidden="true">&larr;</span> Track overview</button>' +
+              '<button class="sheet-close" type="button" aria-label="Close">&times;</button>' +
+            "</div>" +
+            '<blockquote class="decoded-bar">' + esc(ln.text) + "</blockquote>" +
+            body;
+
+          barDecode.querySelector(".back-overview").addEventListener("click", closeDecode);
+          var sc = barDecode.querySelector(".sheet-close");
+          if (sc) sc.addEventListener("click", closeDecode);
         }
 
         function closeDecode() {
@@ -679,7 +675,7 @@
           }
         }
 
-        /* play button is rebound after init (see handlePlayClick below) */
+        playBtn.addEventListener("click", function () { setPlaying(!state.playing); });
 
         function seekFromEvent(e) {
           var rect = trackEl.getBoundingClientRect();
@@ -695,6 +691,56 @@
           if (e.key === "ArrowLeft") { state.cur = Math.max(0, state.cur - 3); paintPlayer(); activeKaraoke(); }
         });
 
+        /* ---------------- Playback dock ---------------- */
+        function renderDock() {
+          var d = DATA[state.lane];
+          state.total = durToSec(d.duration);
+          TOTAL_SECONDS = state.total;
+          trackEl.setAttribute("aria-valuemax", state.total);
+          var isSpotify = !d.audio; /* catalog → Spotify; freestyle → uploaded file */
+
+          // thumbnail
+          if (d.cover === "wave") {
+            playerThumb.className = "player-thumb player-thumb-wave";
+            playerThumb.innerHTML = [38, 72, 52, 88, 60, 34].map(function (h) {
+              return '<span style="--h:' + h + '%"></span>';
+            }).join("");
+          } else {
+            playerThumb.className = "player-thumb";
+            playerThumb.innerHTML = '<img src="' + d.cover + '" alt="" />';
+          }
+          playerTitle.textContent = d.title;
+          playerArtist.textContent = d.artist;
+          playerTotalEl.textContent = d.duration;
+
+          // source tag
+          if (isSpotify) {
+            playerSource.classList.remove("is-local");
+            playerSourceLabel.textContent = "via Spotify";
+          } else {
+            playerSource.classList.add("is-local");
+            playerSourceLabel.textContent = "Synced transcript";
+          }
+
+          // state machine: catalog starts un-connected; freestyle plays directly
+          var showConnect = isSpotify && !state.connected;
+          spotifyConnect.hidden = !showConnect;
+          playerBar.hidden = showConnect;
+          playerNote.hidden = !(isSpotify && state.connected);
+
+          document.body.classList.add("has-dock");
+
+          paintPlayer();
+          activeKaraoke();
+          playBtn.querySelector("span").className = "ico-play";
+          playBtn.classList.remove("is-playing");
+        }
+
+        spotifyConnect.addEventListener("click", function () {
+          state.connected = true;
+          renderDock();
+        });
+
         /* ---------------- Lane switching ---------------- */
         function setLane(lane) {
           if (state.timer) { clearInterval(state.timer); state.timer = null; }
@@ -702,6 +748,7 @@
           state.playing = false;
           state.cur = 0;
           state.selected = null;
+          state.connected = false;
           state.token++;
           closeDecode();
 
@@ -710,14 +757,15 @@
           });
 
           var hasAudio = DATA[lane].audio;
-          playerBar.hidden = !hasAudio;
           document.body.classList.toggle("lane-audio", hasAudio);
-          hint.textContent = hasAudio ? "Press play, or tap any bar to decode" : "Tap any bar to decode it";
+          hint.textContent = hasAudio
+            ? "Press play, or tap any bar to decode"
+            : "Connect to play, or tap any bar to decode";
 
           renderHead();
           renderTranscript();
           renderOverview();
-          if (hasAudio) { paintPlayer(); activeKaraoke(); playBtn.querySelector("span").className = "ico-play"; playBtn.classList.remove("is-playing"); }
+          renderDock();
           window.scrollTo(0, 0);
         }
 
@@ -827,176 +875,8 @@
         document.getElementById("saX").addEventListener("click", function () { flash(this, "Opening X\u2026"); });
         document.getElementById("saIg").addEventListener("click", function () { flash(this, "Opening\u2026"); });
 
-        /* ----------------------------------------------------------------
-         * Live track loading from /api/track/{id}
-         * ---------------------------------------------------------------- */
-        var liveTrack = null;   // populated from the API
-        var liveMode = false;   // true when we're rendering a real API track
-
-        function apiTrackToLane(t) {
-          /* Convert /api/track/{id} response to the DATA lane shape. */
-          var lines = [];
-          var hasSynced = t.synced;
-          (t.sections || []).forEach(function (sec) {
-            (sec.lines || []).forEach(function (ln) {
-              var obj = { text: ln.text || "" };
-              if (typeof ln.t === "number") obj.t = ln.t;
-              lines.push(obj);
-            });
-          });
-          var sections = [{ name: "Lyrics", lines: lines }];
-          return {
-            title: t.title || "Track",
-            artist: t.artist || "",
-            sub: (t.title || "Track") + (t.artist ? " · " + t.artist : ""),
-            duration: t.durationSec ? fmt(t.durationSec) : "",
-            durationSec: t.durationSec || 0,
-            score: 0,
-            cover: t.coverUrl || null,
-            audio: hasSynced,
-            feat: 0,
-            spotifyId: t.spotifyId || null,
-            metrics: [],
-            sections: sections,
-            _raw: t,
-          };
-        }
-
-        function loadTrackFromApi(trackId) {
-          fetch("/api/track/" + encodeURIComponent(trackId))
-            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-            .then(function (t) {
-              liveTrack = t;
-              liveMode = true;
-              /* Inject as a dynamic lane so existing render functions work unchanged */
-              DATA["_live"] = apiTrackToLane(t);
-              /* Also store track id in cookie so Spotify callback can return here */
-              document.cookie = "16lab_track=" + encodeURIComponent(trackId) + "; path=/; max-age=3600; samesite=lax";
-              setLane("_live");
-              /* Remove the lane switcher — not needed for live tracks */
-              var laneRow = document.querySelector(".lane-row");
-              if (laneRow) laneRow.style.display = "none";
-            })
-            .catch(function () {
-              /* API failed — keep mock default, no crash */
-            });
-        }
-
-        /* ----------------------------------------------------------------
-         * Spotify playback
-         * ---------------------------------------------------------------- */
-        var spotifyPoll = null;          // setInterval id
-        var spotifyConnected = false;    // last known connection state
-
-        function stopSpotifyPoll() {
-          if (spotifyPoll) { clearInterval(spotifyPoll); spotifyPoll = null; }
-        }
-
-        function setSpotifyPlaying(on) {
-          state.playing = on;
-          playBtn.classList.toggle("is-playing", on);
-          playBtn.setAttribute("aria-label", on ? "Pause" : "Play");
-          playBtn.querySelector("span").className = on ? "ico-pause" : "ico-play";
-          if (!on) stopSpotifyPoll();
-        }
-
-        function applySpotifyNow(data) {
-          /* data: {isPlaying, progressMs, trackId, durationMs, connected} */
-          spotifyConnected = !!data.connected;
-          if (!data.isPlaying) {
-            if (state.playing) setSpotifyPlaying(false);
-            return;
-          }
-          var progressSec = (data.progressMs || 0) / 1000;
-          var lane = DATA[state.lane];
-          var totalSec = lane ? (lane.durationSec || (data.durationMs / 1000) || TOTAL_SECONDS) : TOTAL_SECONDS;
-
-          /* Sync state.cur to Spotify progress */
-          state.cur = progressSec;
-          if (lane) TOTAL_SECONDS = totalSec;
-          paintPlayer();
-          activeKaraoke();
-
-          if (!state.playing) setSpotifyPlaying(true);
-        }
-
-        function startSpotifyPoll() {
-          if (spotifyPoll) return;
-          spotifyPoll = setInterval(function () {
-            fetch("/api/spotify/now", { credentials: "same-origin" })
-              .then(function (r) { return r.json(); })
-              .then(applySpotifyNow)
-              .catch(function () {});
-          }, 1000);
-        }
-
-        function handlePlayClick() {
-          var lane = DATA[state.lane];
-          /* If this is a mock/audio lane with no Spotify id, use old simulated playback */
-          if (!liveMode || !(lane && lane.spotifyId)) {
-            setPlaying(!state.playing);
-            return;
-          }
-
-          if (state.playing) {
-            /* Pause: just stop polling — we don't tell Spotify to pause */
-            setSpotifyPlaying(false);
-            return;
-          }
-
-          /* Check Spotify connection first */
-          fetch("/api/spotify/now", { credentials: "same-origin" })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-              if (!data.connected) {
-                /* Not logged in → redirect to Spotify OAuth */
-                window.location.href = "/api/spotify/login";
-                return;
-              }
-              /* Connected — start the track */
-              fetch("/api/spotify/play", {
-                method: "PUT",
-                headers: { "content-type": "application/json" },
-                credentials: "same-origin",
-                body: JSON.stringify({ spotifyId: lane.spotifyId }),
-              })
-                .then(function (r) { return r.json(); })
-                .then(function (res) {
-                  if (res.nonPremium) {
-                    /* Non-premium user: open in Spotify instead */
-                    window.open("https://open.spotify.com/track/" + encodeURIComponent(lane.spotifyId), "_blank");
-                    return;
-                  }
-                  if (res.ok) {
-                    setSpotifyPlaying(true);
-                    startSpotifyPoll();
-                  }
-                })
-                .catch(function () {});
-            })
-            .catch(function () {});
-        }
-
-        /* Override the play button handler for live mode */
-
-        /* ----------------------------------------------------------------
-         * Init
-         * ---------------------------------------------------------------- */
-
-        // Check if we're returning from Spotify OAuth (cookie set by server)
-        // by looking at the 16lab_track cookie — if present and ?id= matches, re-init player
-        var urlParams = new URLSearchParams(window.location.search);
-        var trackIdFromUrl = (urlParams.get("id") || "").trim();
-
-        if (trackIdFromUrl) {
-          /* Load from API first, then init lane */
-          loadTrackFromApi(trackIdFromUrl);
-        } else {
-          setLane("starlight");
-        }
-
-        /* Bind play button to Spotify-aware handler */
-        playBtn.addEventListener("click", handlePlayClick);
+        // init
+        setLane("starlight");
       })();
     </script>
   </body>
