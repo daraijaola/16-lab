@@ -183,7 +183,19 @@
 
     <script>
       (function () {
-        /* ---------------- Mock data ---------------- */
+        /* ----------------------------------------------------------------
+         * Spotify karaoke + live track loader
+         * ----------------------------------------------------------------
+         * On load:
+         *   1. Read ?id= from URL → GET /api/track/{id} → store in liveTrack
+         *   2. Render head/transcript/overview from liveTrack (or mock fallback)
+         * Play button:
+         *   1. GET /api/spotify/now → if not connected, redirect to /api/spotify/login
+         *   2. PUT /api/spotify/play {spotifyId}
+         *   3. Poll /api/spotify/now every ~1 s; drive karaoke from progressMs
+         * ---------------------------------------------------------------- */
+
+        /* ---------------- Mock data (fallback when no ?id= or API down) ---------------- */
         var DATA = {
           starlight: {
             title: "Starlight",
@@ -667,7 +679,7 @@
           }
         }
 
-        playBtn.addEventListener("click", function () { setPlaying(!state.playing); });
+        /* play button is rebound after init (see handlePlayClick below) */
 
         function seekFromEvent(e) {
           var rect = trackEl.getBoundingClientRect();
@@ -815,8 +827,176 @@
         document.getElementById("saX").addEventListener("click", function () { flash(this, "Opening X\u2026"); });
         document.getElementById("saIg").addEventListener("click", function () { flash(this, "Opening\u2026"); });
 
-        // init
-        setLane("starlight");
+        /* ----------------------------------------------------------------
+         * Live track loading from /api/track/{id}
+         * ---------------------------------------------------------------- */
+        var liveTrack = null;   // populated from the API
+        var liveMode = false;   // true when we're rendering a real API track
+
+        function apiTrackToLane(t) {
+          /* Convert /api/track/{id} response to the DATA lane shape. */
+          var lines = [];
+          var hasSynced = t.synced;
+          (t.sections || []).forEach(function (sec) {
+            (sec.lines || []).forEach(function (ln) {
+              var obj = { text: ln.text || "" };
+              if (typeof ln.t === "number") obj.t = ln.t;
+              lines.push(obj);
+            });
+          });
+          var sections = [{ name: "Lyrics", lines: lines }];
+          return {
+            title: t.title || "Track",
+            artist: t.artist || "",
+            sub: (t.title || "Track") + (t.artist ? " · " + t.artist : ""),
+            duration: t.durationSec ? fmt(t.durationSec) : "",
+            durationSec: t.durationSec || 0,
+            score: 0,
+            cover: t.coverUrl || null,
+            audio: hasSynced,
+            feat: 0,
+            spotifyId: t.spotifyId || null,
+            metrics: [],
+            sections: sections,
+            _raw: t,
+          };
+        }
+
+        function loadTrackFromApi(trackId) {
+          fetch("/api/track/" + encodeURIComponent(trackId))
+            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(function (t) {
+              liveTrack = t;
+              liveMode = true;
+              /* Inject as a dynamic lane so existing render functions work unchanged */
+              DATA["_live"] = apiTrackToLane(t);
+              /* Also store track id in cookie so Spotify callback can return here */
+              document.cookie = "16lab_track=" + encodeURIComponent(trackId) + "; path=/; max-age=3600; samesite=lax";
+              setLane("_live");
+              /* Remove the lane switcher — not needed for live tracks */
+              var laneRow = document.querySelector(".lane-row");
+              if (laneRow) laneRow.style.display = "none";
+            })
+            .catch(function () {
+              /* API failed — keep mock default, no crash */
+            });
+        }
+
+        /* ----------------------------------------------------------------
+         * Spotify playback
+         * ---------------------------------------------------------------- */
+        var spotifyPoll = null;          // setInterval id
+        var spotifyConnected = false;    // last known connection state
+
+        function stopSpotifyPoll() {
+          if (spotifyPoll) { clearInterval(spotifyPoll); spotifyPoll = null; }
+        }
+
+        function setSpotifyPlaying(on) {
+          state.playing = on;
+          playBtn.classList.toggle("is-playing", on);
+          playBtn.setAttribute("aria-label", on ? "Pause" : "Play");
+          playBtn.querySelector("span").className = on ? "ico-pause" : "ico-play";
+          if (!on) stopSpotifyPoll();
+        }
+
+        function applySpotifyNow(data) {
+          /* data: {isPlaying, progressMs, trackId, durationMs, connected} */
+          spotifyConnected = !!data.connected;
+          if (!data.isPlaying) {
+            if (state.playing) setSpotifyPlaying(false);
+            return;
+          }
+          var progressSec = (data.progressMs || 0) / 1000;
+          var lane = DATA[state.lane];
+          var totalSec = lane ? (lane.durationSec || (data.durationMs / 1000) || TOTAL_SECONDS) : TOTAL_SECONDS;
+
+          /* Sync state.cur to Spotify progress */
+          state.cur = progressSec;
+          if (lane) TOTAL_SECONDS = totalSec;
+          paintPlayer();
+          activeKaraoke();
+
+          if (!state.playing) setSpotifyPlaying(true);
+        }
+
+        function startSpotifyPoll() {
+          if (spotifyPoll) return;
+          spotifyPoll = setInterval(function () {
+            fetch("/api/spotify/now", { credentials: "same-origin" })
+              .then(function (r) { return r.json(); })
+              .then(applySpotifyNow)
+              .catch(function () {});
+          }, 1000);
+        }
+
+        function handlePlayClick() {
+          var lane = DATA[state.lane];
+          /* If this is a mock/audio lane with no Spotify id, use old simulated playback */
+          if (!liveMode || !(lane && lane.spotifyId)) {
+            setPlaying(!state.playing);
+            return;
+          }
+
+          if (state.playing) {
+            /* Pause: just stop polling — we don't tell Spotify to pause */
+            setSpotifyPlaying(false);
+            return;
+          }
+
+          /* Check Spotify connection first */
+          fetch("/api/spotify/now", { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (!data.connected) {
+                /* Not logged in → redirect to Spotify OAuth */
+                window.location.href = "/api/spotify/login";
+                return;
+              }
+              /* Connected — start the track */
+              fetch("/api/spotify/play", {
+                method: "PUT",
+                headers: { "content-type": "application/json" },
+                credentials: "same-origin",
+                body: JSON.stringify({ spotifyId: lane.spotifyId }),
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                  if (res.nonPremium) {
+                    /* Non-premium user: open in Spotify instead */
+                    window.open("https://open.spotify.com/track/" + encodeURIComponent(lane.spotifyId), "_blank");
+                    return;
+                  }
+                  if (res.ok) {
+                    setSpotifyPlaying(true);
+                    startSpotifyPoll();
+                  }
+                })
+                .catch(function () {});
+            })
+            .catch(function () {});
+        }
+
+        /* Override the play button handler for live mode */
+
+        /* ----------------------------------------------------------------
+         * Init
+         * ---------------------------------------------------------------- */
+
+        // Check if we're returning from Spotify OAuth (cookie set by server)
+        // by looking at the 16lab_track cookie — if present and ?id= matches, re-init player
+        var urlParams = new URLSearchParams(window.location.search);
+        var trackIdFromUrl = (urlParams.get("id") || "").trim();
+
+        if (trackIdFromUrl) {
+          /* Load from API first, then init lane */
+          loadTrackFromApi(trackIdFromUrl);
+        } else {
+          setLane("starlight");
+        }
+
+        /* Bind play button to Spotify-aware handler */
+        playBtn.addEventListener("click", handlePlayClick);
       })();
     </script>
   </body>

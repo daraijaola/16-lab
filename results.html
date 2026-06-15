@@ -258,55 +258,96 @@
         var input = document.getElementById("lab-search");
         var form = document.getElementById("searchForm");
         var emptyQuery = document.getElementById("emptyQuery");
-        var pills = Array.prototype.slice.call(document.querySelectorAll(".state-pill"));
 
-        // Pick up the query passed from Overview (?q=)
         var params = new URLSearchParams(window.location.search);
-        var q = (params.get("q") || "Dave").trim();
+        var q = (params.get("q") || "").trim();
         if (q) input.value = q;
 
         function esc(s) {
-          return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        var views = { results: list, loading: skeleton, empty: empty };
-        function counts(state) {
-          var qh = esc(input.value || "Dave");
-          if (state === "loading") return "<strong>Searching</strong> for &ldquo;" + qh + "&rdquo;&hellip;";
-          if (state === "empty") return "<strong>0 tracks</strong> for &ldquo;" + qh + "&rdquo;";
-          return "<strong>7 tracks</strong> for &ldquo;" + qh + "&rdquo;";
+        function fmt(sec) {
+          if (!sec) return "";
+          var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+          return m + ":" + (s < 10 ? "0" : "") + s;
         }
 
-        function show(state) {
-          Object.keys(views).forEach(function (key) {
-            views[key].hidden = key !== state;
+        function show(state, n) {
+          list.hidden = state !== "results";
+          skeleton.hidden = state !== "loading";
+          empty.hidden = state !== "empty";
+          var qh = esc(input.value.trim() || "");
+          if (state === "loading") {
+            count.innerHTML = "<strong>Searching</strong> for &ldquo;" + qh + "&rdquo;&hellip;";
+          } else if (state === "empty") {
+            count.innerHTML = "<strong>0 tracks</strong> for &ldquo;" + qh + "&rdquo;";
+            emptyQuery.textContent = input.value.trim();
+          } else {
+            count.innerHTML = "<strong>" + (n || 0) + " track" + (n === 1 ? "" : "s") + "</strong> for &ldquo;" + qh + "&rdquo;";
+          }
+        }
+
+        function renderResults(data) {
+          if (!data.results || !data.results.length) { show("empty"); return; }
+          var html = "";
+          data.results.forEach(function (r) {
+            var href = "./decode.html?id=" + encodeURIComponent(r.id);
+            var artEl = r.coverUrl
+              ? '<span class="result-art"><img src="' + esc(r.coverUrl) + '" alt="' + esc(r.title) + ' artwork" loading="lazy" /></span>'
+              : '<span class="result-art cover-ph" aria-hidden="true"></span>';
+            var dur = r.durationSec ? '<span class="result-time">' + fmt(r.durationSec) + '</span>' : "";
+            html +=
+              '<li class="result-row">' +
+              '<a class="result-hit" href="' + href + '" aria-label="Decode ' + esc(r.title) + ' by ' + esc(r.artist) + '">' +
+              artEl +
+              '<span class="result-info"><strong class="result-title">' + esc(r.title) + '</strong>' +
+              '<span class="result-artist">' + esc(r.artist) + '</span></span>' +
+              '</a>' +
+              '<span class="result-badge"><img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />Lyrics &middot; Musixmatch</span>' +
+              dur +
+              '<a class="decode-btn" href="' + href + '">Decode</a>' +
+              '</li>';
           });
-          count.innerHTML = counts(state);
-          if (state === "empty") emptyQuery.textContent = input.value || "Dave";
-          pills.forEach(function (p) {
-            p.classList.toggle("is-active", p.getAttribute("data-state") === state);
-          });
+          list.innerHTML = html;
+          show("results", data.results.length);
         }
-        show("results");
 
-        pills.forEach(function (p) {
-          p.addEventListener("click", function () { show(p.getAttribute("data-state")); });
-        });
+        function doSearch(query) {
+          if (!query) return;
+          show("loading");
+          fetch("/api/search?" + new URLSearchParams({ q: query }))
+            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(renderResults)
+            .catch(function () { show("empty"); });
+        }
 
-        // Refine search: brief loading shimmer, then results
         form.addEventListener("submit", function (e) {
           e.preventDefault();
-          show("loading");
-          setTimeout(function () { show("results"); }, 900);
+          var v = input.value.trim();
+          if (v) {
+            var url = new URL(window.location.href);
+            url.searchParams.set("q", v);
+            window.history.replaceState(null, "", url.toString());
+            doSearch(v);
+          }
         });
 
-        // Empty-state: edit search focuses the field
         var editBtn = document.querySelector(".empty-action-search");
         if (editBtn) editBtn.addEventListener("click", function () {
-          show("results");
-          input.focus();
-          input.select();
+          list.hidden = false; skeleton.hidden = true; empty.hidden = true;
+          input.focus(); input.select();
         });
+
+        // Auto-search on load if ?q= is set
+        if (q) {
+          doSearch(q);
+        } else {
+          // Show the static mock list until user searches
+          list.hidden = false;
+          skeleton.hidden = true;
+          empty.hidden = true;
+        }
       })();
     </script>
   </body>
