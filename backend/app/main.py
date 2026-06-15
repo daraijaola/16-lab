@@ -178,4 +178,10 @@ def spotify_play(req: PlayRequest, request: Request):
     return spotify.play(sid, req.spotifyId)
 
 
+@api.put("/spotify/pause")
+def spotify_pause(request: Request):
+    sid = request.cookies.get(spotify._COOKIE)
+    return spotify.pause(sid)
+
+
 app.mount("/api", api)

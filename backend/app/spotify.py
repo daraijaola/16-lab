@@ -173,3 +173,22 @@ def play(sid: Optional[str], spotify_id: str) -> dict:
         return {"ok": False, "connected": True}
     except Exception:
         return {"ok": False, "connected": True}
+
+
+def pause(sid: Optional[str]) -> dict:
+    """Pause playback. Returns {ok}."""
+    session = _get_session(sid)
+    if not session:
+        return {"ok": False, "connected": False}
+    try:
+        token = _bearer(session)
+        r = httpx.put(
+            f"{_API}/me/player/pause",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=_TIMEOUT,
+        )
+        if r.status_code in (200, 204):
+            return {"ok": True, "connected": True}
+        return {"ok": False, "connected": True}
+    except Exception:
+        return {"ok": False, "connected": True}

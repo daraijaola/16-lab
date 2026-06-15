@@ -406,9 +406,13 @@
               '<button class="back-overview" type="button"><span aria-hidden="true">←</span> Track overview</button>'+
               '<button class="sheet-close" type="button" aria-label="Close">×</button>'+
             '</div>'+
-            '<blockquote class="decoded-bar">'+esc(barText)+'</blockquote>'+body;
+            '<blockquote class="decoded-bar">'+esc(barText)+'</blockquote>'+body+
+            '<div class="decode-share-row">'+
+              '<button class="decode-share-btn" type="button"><span class="share-ico" aria-hidden="true"></span>Share this bar</button>'+
+            '</div>';
           barDecode.querySelector(".back-overview").addEventListener("click",closeDecode);
           var sc=barDecode.querySelector(".sheet-close"); if(sc) sc.addEventListener("click",closeDecode);
+          var sb=barDecode.querySelector(".decode-share-btn"); if(sb) sb.addEventListener("click",openShare);
         }
 
         function renderDecodeError(barText) {
@@ -522,22 +526,23 @@
           e.stopImmediatePropagation();
           var d=DATA[state.lane];
           if(state.connected&&d&&!d.audio&&d.spotifyId){
-            fetch("/api/spotify/now")
-              .then(function(r){return r.ok?r.json():Promise.reject();})
-              .then(function(sp){
-                if(sp.isPlaying){
-                  stopKaraokeSync();
-                  state.playing=false;
-                  playBtn.classList.remove("is-playing");
-                  playBtn.setAttribute("aria-label","Play");
-                  playBtn.querySelector("span").className="ico-play";
-                } else {
-                  fetch("/api/spotify/play",{
-                    method:"PUT",headers:{"Content-Type":"application/json"},
-                    body:JSON.stringify({spotifyId:d.spotifyId})
-                  }).then(function(){startKaraokeSync();}).catch(function(){});
-                }
+            if(state.playing){
+              state.playing=false;
+              playBtn.classList.remove("is-playing");
+              playBtn.setAttribute("aria-label","Play");
+              playBtn.querySelector("span").className="ico-play";
+              fetch("/api/spotify/pause",{method:"PUT"}).catch(function(){});
+            } else {
+              fetch("/api/spotify/play",{
+                method:"PUT",headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({spotifyId:d.spotifyId})
+              }).then(function(){
+                state.playing=true; _spAt=Date.now();
+                playBtn.classList.add("is-playing");
+                playBtn.setAttribute("aria-label","Pause");
+                playBtn.querySelector("span").className="ico-pause";
               }).catch(function(){});
+            }
           } else {
             setPlaying(!state.playing);
           }
@@ -617,10 +622,20 @@
             .catch(function(){});
         }
 
-        /* ── Karaoke sync: poll Spotify every second for position ── */
-        var _karaokeTimer=null;
+        /* ── Karaoke sync: smooth interpolation + 2s Spotify ground-truth poll ── */
+        var _karaokeTimer=null, _smoothTick=null, _spBase=0, _spAt=0;
         function startKaraokeSync(){
           if(_karaokeTimer) clearInterval(_karaokeTimer);
+          if(_smoothTick) clearInterval(_smoothTick);
+          _spBase=state.cur; _spAt=Date.now();
+          /* 100ms smooth tick — advances position between Spotify polls */
+          _smoothTick=setInterval(function(){
+            if(!state.playing) return;
+            state.cur=_spBase+(Date.now()-_spAt)/1000;
+            if(state.cur>TOTAL_SECONDS) state.cur=TOTAL_SECONDS;
+            paintPlayer(); activeKaraoke();
+          },100);
+          /* 2s poll snaps position to Spotify ground truth */
           _karaokeTimer=setInterval(function(){
             fetch("/api/spotify/now")
               .then(function(r){return r.ok?r.json():Promise.reject();})
@@ -628,9 +643,8 @@
                 if(!sp.connected) return;
                 var playing=!!sp.isPlaying;
                 if(playing){
-                  state.cur=(sp.progressMs||0)/1000;
+                  _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
                   if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
-                  paintPlayer(); activeKaraoke();
                 }
                 if(playing!==state.playing){
                   state.playing=playing;
@@ -640,10 +654,11 @@
                 }
               })
               .catch(function(){});
-          },1000);
+          },2000);
         }
         function stopKaraokeSync(){
           if(_karaokeTimer){clearInterval(_karaokeTimer);_karaokeTimer=null;}
+          if(_smoothTick){clearInterval(_smoothTick);_smoothTick=null;}
         }
 
         /* ── Share card ──────────────────────────────────────────── */
