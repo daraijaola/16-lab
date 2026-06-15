@@ -26,6 +26,12 @@ MUSIXMATCH_API_KEY: str = os.getenv("MUSIXMATCH_API_KEY", "")
 LALAL_LICENSE_KEY: str = os.getenv("LALAL_LICENSE_KEY", "")
 ELEVENLABS_API_KEY: str = os.getenv("ELEVENLABS_API_KEY", "")
 
+SPOTIFY_CLIENT_ID: str = os.getenv("SPOTIFY_CLIENT_ID", "")
+SPOTIFY_CLIENT_SECRET: str = os.getenv("SPOTIFY_CLIENT_SECRET", "")
+SPOTIFY_REDIRECT_URI: str = os.getenv(
+    "SPOTIFY_REDIRECT_URI", "https://16labs.xyz/api/spotify/callback"
+)
+
 CORS_ORIGINS: list[str] = [
     o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()
 ]
