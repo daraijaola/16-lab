@@ -519,7 +519,7 @@
           playerSourceLabel.textContent=isSpotify?"via Spotify":"Synced transcript";
           var showConnect=isSpotify&&!state.connected;
           spotifyConnect.hidden=!showConnect; playerBar.hidden=showConnect;
-          playerNote.hidden=!(isSpotify&&state.connected);
+          playerNote.hidden=true;
           document.body.classList.add("has-dock");
           paintPlayer();activeKaraoke();
           playBtn.querySelector("span").className=state.playing?"ico-pause":"ico-play";
@@ -527,6 +527,15 @@
           playBtn.setAttribute("aria-label",state.playing?"Pause":"Play");
         }
 
+        function showPlayerError(res){
+          var msg=res.nonPremium
+            ?"Spotify Premium required for in-app playback."
+            :res.noDevice
+              ?"No active Spotify device — open the Spotify app then tap play."
+              :"Couldn't start playback — open Spotify and try again.";
+          playerNote.textContent=msg; playerNote.hidden=false;
+          setTimeout(function(){playerNote.hidden=true;},5000);
+        }
         /* Spotify connect → OAuth */
         spotifyConnect.addEventListener("click",function(){
           if(trackId) document.cookie="16lab_track="+encodeURIComponent(trackId)+";path=/;max-age=600;SameSite=Lax;Secure";
@@ -560,9 +569,8 @@
                   playBtn.classList.add("is-playing");
                   playBtn.setAttribute("aria-label","Pause");
                   playBtn.querySelector("span").className="ico-pause";
-                } else if(res.nonPremium){
-                  playerNote.textContent="Spotify Premium required for in-app play.";
-                  playerNote.hidden=false;
+                } else {
+                  showPlayerError(res);
                 }
               })
               .catch(function(){});
@@ -635,11 +643,12 @@
               state.connected=true;
               /* Sync play state BEFORE renderDock so the button renders correctly */
               if(sp.isPlaying&&sp.trackId===d.spotifyId){
+                /* Already on this track — sync position */
                 state.playing=true;
                 _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
                 if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
-              } else if(d.spotifyId&&!sp.isPlaying){
-                /* Auto-play: only if Spotify is idle (avoids interrupting other music) */
+              } else if(d.spotifyId){
+                /* Auto-play whenever we're not already on this track */
                 fetch("/api/spotify/play",{
                   method:"PUT",headers:{"Content-Type":"application/json"},
                   body:JSON.stringify({spotifyId:d.spotifyId})
@@ -651,6 +660,8 @@
                     playBtn.classList.add("is-playing");
                     playBtn.setAttribute("aria-label","Pause");
                     playBtn.querySelector("span").className="ico-pause";
+                  } else {
+                    showPlayerError(res);
                   }
                 }).catch(function(){});
               }

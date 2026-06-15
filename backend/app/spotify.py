@@ -151,24 +151,39 @@ def now_playing(sid: Optional[str]) -> dict:
 
 
 def play(sid: Optional[str], spotify_id: str) -> dict:
-    """Start playing a track. Returns {ok, nonPremium}."""
+    """Start playing a track. Returns {ok, nonPremium, noDevice}."""
     session = _get_session(sid)
     if not session:
         return {"ok": False, "connected": False}
     try:
         token = _bearer(session)
+        auth = {"Authorization": f"Bearer {token}"}
+
+        # Pick the best available device so mobile/background apps work
+        device_id = None
+        try:
+            dr = httpx.get(f"{_API}/me/player/devices", headers=auth, timeout=_TIMEOUT)
+            if dr.status_code == 200:
+                devices = dr.json().get("devices", [])
+                if devices:
+                    active = next((d for d in devices if d.get("is_active")), None)
+                    device_id = (active or devices[0])["id"]
+        except Exception:
+            pass
+
+        params = {"device_id": device_id} if device_id else {}
         r = httpx.put(
             f"{_API}/me/player/play",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            },
+            headers={**auth, "Content-Type": "application/json"},
+            params=params,
             json={"uris": [f"spotify:track:{spotify_id}"]},
             timeout=_TIMEOUT,
         )
         if r.status_code == 403:
             return {"ok": False, "nonPremium": True, "connected": True}
-        if r.status_code in (200, 204):
+        if r.status_code == 404:
+            return {"ok": False, "noDevice": True, "connected": True}
+        if r.status_code in (200, 202, 204):
             return {"ok": True, "connected": True}
         return {"ok": False, "connected": True}
     except Exception:
