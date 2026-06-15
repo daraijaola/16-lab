@@ -112,18 +112,30 @@ def _track_row(t: dict) -> dict:
     }
 
 
+def _parse_query(query: str) -> tuple[str, str]:
+    """Split 'track by artist' or 'artist - track' into (q_track, q_artist)."""
+    lower = query.lower()
+    if " by " in lower:
+        idx = lower.index(" by ")
+        return query[:idx].strip(), query[idx + 4:].strip()
+    if " - " in query:
+        parts = query.split(" - ", 1)
+        return parts[1].strip(), parts[0].strip()
+    return query, ""
+
+
 def search(query: str, page_size: int = 10) -> dict:
     if not _key():
         return _mock_search(query)
+    q_track, q_artist = _parse_query(query)
     try:
-        data = _get(
-            "track.search",
-            q=query,
-            page_size=page_size,
-            page=1,
-            s_track_rating="desc",
-            f_has_lyrics=1,
-        )
+        params: dict = dict(page_size=page_size, page=1, s_track_rating="desc", f_has_lyrics=1)
+        if q_artist:
+            params["q_track"] = q_track
+            params["q_artist"] = q_artist
+        else:
+            params["q"] = query
+        data = _get("track.search", **params)
         tracks = (
             data.get("message", {})
             .get("body", {})

@@ -472,7 +472,7 @@
             },250);
           } else if(state.timer){clearInterval(state.timer);state.timer=null;}
         }
-        playBtn.addEventListener("click",function(){setPlaying(!state.playing);});
+        /* play/pause handled by Spotify-aware listener above */
         function seekFromEvent(e){
           var rect=trackEl.getBoundingClientRect();
           var x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
@@ -517,6 +517,31 @@
           window.location.href="/api/spotify/login";
         });
 
+        /* Play button: drive Spotify when connected, local timer otherwise */
+        playBtn.addEventListener("click",function(e){
+          e.stopImmediatePropagation();
+          var d=DATA[state.lane];
+          if(state.connected&&d&&!d.audio&&d.spotifyId){
+            fetch("/api/spotify/now")
+              .then(function(r){return r.ok?r.json():Promise.reject();})
+              .then(function(sp){
+                if(sp.isPlaying){
+                  stopKaraokeSync();
+                  state.playing=false;
+                  playBtn.classList.remove("is-playing");
+                  playBtn.setAttribute("aria-label","Play");
+                  playBtn.querySelector("span").className="ico-play";
+                } else {
+                  fetch("/api/spotify/play",{
+                    method:"PUT",headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({spotifyId:d.spotifyId})
+                  }).then(function(){startKaraokeSync();}).catch(function(){});
+                }
+              }).catch(function(){});
+          } else {
+            setPlaying(!state.playing);
+          }
+        },true);
         /* ── Lane switching ──────────────────────────────────────── */
         function renderLane() {
           if(state.timer){clearInterval(state.timer);state.timer=null;}
@@ -536,36 +561,89 @@
         }
         lanePills.forEach(function(p){p.addEventListener("click",function(){setLane(p.getAttribute("data-lane"));});});
 
-        /* ── Load catalog track from API ─────────────────────────── */
+/* ── Load catalog track from API ─────────────────── */
         function loadCatalogTrack() {
           if(!trackId){
             head.innerHTML='<div style="padding:1.5rem;opacity:.6">No track selected — <a href="./lab.html">search one</a>.</div>';
             scroll.innerHTML=overview.innerHTML=""; return;
           }
           showLoading();
-          var trackData=null,scoreData=null,done=0;
-          function tryBuild(){
-            if(++done<2) return;
-            if(!trackData){showError("Couldn’t load track — go back and try another.");return;}
-            var metrics=(scoreData&&scoreData.metrics||[]).map(function(m){return{label:m.label,v:m.value};});
-            DATA.starlight={
-              id:trackData.id, title:trackData.title, artist:trackData.artist,
-              duration:trackData.durationSec?fmt(trackData.durationSec):"0:00",
-              score:(scoreData&&scoreData.score)||0,
-              cover:trackData.coverUrl||null, audio:false, feat:0,
-              spotifyId:trackData.spotifyId||null,
-              metrics:metrics, sections:trackData.sections
-            };
-            renderLane();
-          }
+
+          /* Render track immediately; score patches in when ready */
           fetch("/api/track/"+encodeURIComponent(trackId))
             .then(function(r){return r.ok?r.json():Promise.reject();})
-            .then(function(d){trackData=d;tryBuild();})
-            .catch(function(){tryBuild();});
+            .then(function(d){
+              DATA.starlight={
+                id:d.id, title:d.title, artist:d.artist,
+                duration:d.durationSec?fmt(d.durationSec):"0:00",
+                score:0, cover:d.coverUrl||null, audio:false, feat:0,
+                spotifyId:d.spotifyId||null, metrics:[], sections:d.sections
+              };
+              renderLane();
+              checkSpotifyOnLoad();
+            })
+            .catch(function(){ showError("Couldn't load track — go back and try another."); });
+
           fetch("/api/track/"+encodeURIComponent(trackId)+"/score")
             .then(function(r){return r.ok?r.json():Promise.reject();})
-            .then(function(d){scoreData=d;tryBuild();})
-            .catch(function(){tryBuild();});
+            .then(function(s){
+              if(!DATA.starlight) return;
+              DATA.starlight.score=(s&&s.score)||0;
+              DATA.starlight.metrics=(s&&s.metrics||[]).map(function(m){return{label:m.label,v:m.value};});
+              renderHead(); renderOverview();
+            })
+            .catch(function(){});
+        }
+
+        /* ── Check Spotify connection on page load (after OAuth return) ── */
+        function checkSpotifyOnLoad() {
+          var d=DATA.starlight;
+          if(!d||d.audio) return;
+          fetch("/api/spotify/now")
+            .then(function(r){return r.ok?r.json():Promise.reject();})
+            .then(function(sp){
+              if(!sp.connected) return;
+              state.connected=true;
+              renderDock();
+              /* Auto-play if not already on this track */
+              if(d.spotifyId&&(!sp.isPlaying||sp.trackId!==d.spotifyId)){
+                fetch("/api/spotify/play",{
+                  method:"PUT",headers:{"Content-Type":"application/json"},
+                  body:JSON.stringify({spotifyId:d.spotifyId})
+                }).catch(function(){});
+              }
+              startKaraokeSync();
+            })
+            .catch(function(){});
+        }
+
+        /* ── Karaoke sync: poll Spotify every second for position ── */
+        var _karaokeTimer=null;
+        function startKaraokeSync(){
+          if(_karaokeTimer) clearInterval(_karaokeTimer);
+          _karaokeTimer=setInterval(function(){
+            fetch("/api/spotify/now")
+              .then(function(r){return r.ok?r.json():Promise.reject();})
+              .then(function(sp){
+                if(!sp.connected) return;
+                var playing=!!sp.isPlaying;
+                if(playing){
+                  state.cur=(sp.progressMs||0)/1000;
+                  if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
+                  paintPlayer(); activeKaraoke();
+                }
+                if(playing!==state.playing){
+                  state.playing=playing;
+                  playBtn.classList.toggle("is-playing",playing);
+                  playBtn.setAttribute("aria-label",playing?"Pause":"Play");
+                  playBtn.querySelector("span").className=playing?"ico-pause":"ico-play";
+                }
+              })
+              .catch(function(){});
+          },1000);
+        }
+        function stopKaraokeSync(){
+          if(_karaokeTimer){clearInterval(_karaokeTimer);_karaokeTimer=null;}
         }
 
         /* ── Share card ──────────────────────────────────────────── */
