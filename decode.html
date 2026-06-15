@@ -647,22 +647,22 @@
             if(state.cur>TOTAL_SECONDS) state.cur=TOTAL_SECONDS;
             paintPlayer(); activeKaraoke();
           },100);
-          /* 2s poll snaps position to Spotify ground truth */
+          /* 2s poll: sync position only. Never flip UI to paused — user controls that. */
           _karaokeTimer=setInterval(function(){
             fetch("/api/spotify/now")
               .then(function(r){return r.ok?r.json():Promise.reject();})
               .then(function(sp){
                 if(!sp.connected) return;
-                var playing=!!sp.isPlaying;
-                if(playing){
+                if(sp.isPlaying){
                   _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
                   if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
-                }
-                if(playing!==state.playing&&Date.now()>_ignorePlayStateUntil){
-                  state.playing=playing;
-                  playBtn.classList.toggle("is-playing",playing);
-                  playBtn.setAttribute("aria-label",playing?"Pause":"Play");
-                  playBtn.querySelector("span").className=playing?"ico-pause":"ico-play";
+                  /* Detect external play (user resumed from Spotify app) */
+                  if(!state.playing&&Date.now()>_ignorePlayStateUntil){
+                    state.playing=true;
+                    playBtn.classList.add("is-playing");
+                    playBtn.setAttribute("aria-label","Pause");
+                    playBtn.querySelector("span").className="ico-pause";
+                  }
                 }
               })
               .catch(function(){});
