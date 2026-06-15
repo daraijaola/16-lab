@@ -450,18 +450,28 @@
           curEl.textContent=fmt(state.cur);
           trackEl.setAttribute("aria-valuenow",Math.round(state.cur));
         }
+        var _lastKaraokeEl=null;
         function activeKaraoke() {
           var bars=scroll.querySelectorAll(".bar[data-t]"); var activeEl=null;
           Array.prototype.forEach.call(bars,function(b){
             var t=parseFloat(b.getAttribute("data-t")); b.classList.remove("is-karaoke");
             if(t<=state.cur) activeEl=b;
           });
-          if(activeEl){
-            activeEl.classList.add("is-karaoke");
-            if(scroll.scrollHeight>scroll.clientHeight+4){
-              var pr=scroll.getBoundingClientRect(),br=activeEl.getBoundingClientRect();
-              scroll.scrollTo({top:scroll.scrollTop+(br.top-pr.top)-(scroll.clientHeight/2-activeEl.clientHeight/2),behavior:"smooth"});
-            }
+          if(!activeEl) return;
+          activeEl.classList.add("is-karaoke");
+          if(activeEl===_lastKaraokeEl) return;
+          _lastKaraokeEl=activeEl;
+          var br=activeEl.getBoundingClientRect();
+          if(scroll.scrollHeight>scroll.clientHeight+4){
+            /* Desktop: scroll within the transcript pane */
+            var pr=scroll.getBoundingClientRect();
+            scroll.scrollTo({top:scroll.scrollTop+(br.top-pr.top)-(scroll.clientHeight/2-activeEl.clientHeight/2),behavior:"smooth"});
+          } else {
+            /* Mobile: scroll the page so the bar sits ~1/3 down (above the dock) */
+            var dockH=document.body.classList.contains("has-dock")?96:0;
+            var viewH=window.innerHeight-dockH;
+            var target=window.scrollY+br.top-viewH*0.33;
+            window.scrollTo({top:Math.max(0,target),behavior:"smooth"});
           }
         }
         function setPlaying(on) {
@@ -526,21 +536,23 @@
           e.stopImmediatePropagation();
           var d=DATA[state.lane];
           if(state.connected&&d&&!d.audio&&d.spotifyId){
+            _ignorePlayStateUntil=Date.now()+3000;
             if(state.playing){
+              _spBase=state.cur;
               state.playing=false;
               playBtn.classList.remove("is-playing");
               playBtn.setAttribute("aria-label","Play");
               playBtn.querySelector("span").className="ico-play";
               fetch("/api/spotify/pause",{method:"PUT"}).catch(function(){});
             } else {
+              _spBase=state.cur; _spAt=Date.now();
+              state.playing=true;
+              playBtn.classList.add("is-playing");
+              playBtn.setAttribute("aria-label","Pause");
+              playBtn.querySelector("span").className="ico-pause";
               fetch("/api/spotify/play",{
                 method:"PUT",headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({spotifyId:d.spotifyId})
-              }).then(function(){
-                state.playing=true; _spAt=Date.now();
-                playBtn.classList.add("is-playing");
-                playBtn.setAttribute("aria-label","Pause");
-                playBtn.querySelector("span").className="ico-pause";
               }).catch(function(){});
             }
           } else {
@@ -551,7 +563,7 @@
         function renderLane() {
           if(state.timer){clearInterval(state.timer);state.timer=null;}
           state.playing=false;state.cur=0;state.selected=null;state.connected=false;state.token++;
-          closeDecode();
+          closeDecode(); _lastKaraokeEl=null;
           var d=DATA[state.lane];
           document.body.classList.toggle("lane-audio",!!d.audio);
           hint.textContent=d.audio?"Press play, or tap any bar to decode":"Connect to play, or tap any bar to decode";
@@ -623,7 +635,7 @@
         }
 
         /* ── Karaoke sync: smooth interpolation + 2s Spotify ground-truth poll ── */
-        var _karaokeTimer=null, _smoothTick=null, _spBase=0, _spAt=0;
+        var _karaokeTimer=null, _smoothTick=null, _spBase=0, _spAt=0, _ignorePlayStateUntil=0;
         function startKaraokeSync(){
           if(_karaokeTimer) clearInterval(_karaokeTimer);
           if(_smoothTick) clearInterval(_smoothTick);
@@ -646,7 +658,7 @@
                   _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
                   if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
                 }
-                if(playing!==state.playing){
+                if(playing!==state.playing&&Date.now()>_ignorePlayStateUntil){
                   state.playing=playing;
                   playBtn.classList.toggle("is-playing",playing);
                   playBtn.setAttribute("aria-label",playing?"Pause":"Play");
