@@ -17,7 +17,7 @@ from . import config
 
 ENDPOINT = "https://api.elevenlabs.io/v1/speech-to-text"
 MODEL = "scribe_v1"
-_TIMEOUT = 180.0
+_TIMEOUT = 600.0  # long enough for ~7-min uploads
 
 
 class ScribeError(RuntimeError):

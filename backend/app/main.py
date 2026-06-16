@@ -4,6 +4,7 @@ Served under /api on the same origin as the static front end.
 """
 
 import os
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
@@ -248,13 +249,28 @@ def depth_score(req: DepthRequest):
 # ---------------------------------------------------------------------------
 
 _UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads"
-_MAX_BYTES = 20 * 1024 * 1024  # ~20MB
+_MAX_BYTES = 90 * 1024 * 1024  # ~90MB (covers ~7 min, incl. WAV)
+_MAX_UPLOAD_AGE = 24 * 3600  # delete stored uploads older than a day
 _AUDIO_EXT = {"mp3", "wav", "m4a", "aac", "ogg", "flac", "webm", "mp4"}
 _MIME = {
     "mp3": "audio/mpeg", "wav": "audio/wav", "m4a": "audio/mp4",
     "aac": "audio/aac", "ogg": "audio/ogg", "flac": "audio/flac",
     "webm": "audio/webm", "mp4": "audio/mp4",
 }
+
+
+def _sweep_uploads() -> None:
+    """Best-effort cleanup so stored audio can't pile up on disk over time."""
+    try:
+        now = time.time()
+        for f in _UPLOAD_DIR.glob("*"):
+            try:
+                if f.is_file() and now - f.stat().st_mtime > _MAX_UPLOAD_AGE:
+                    f.unlink()
+            except OSError:
+                pass
+    except OSError:
+        pass
 
 
 @api.post("/upload")
@@ -267,6 +283,7 @@ async def upload(file: UploadFile = File(...)):
         ext = "mp3"
 
     _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    _sweep_uploads()
     jid = jobs.create(ext)
     dest = _UPLOAD_DIR / f"{jid}.{ext}"
     size = 0
@@ -280,8 +297,8 @@ async def upload(file: UploadFile = File(...)):
                 if size > _MAX_BYTES:
                     out.close()
                     dest.unlink(missing_ok=True)
-                    jobs.set_error(jid, "File too large (max 20MB).")
-                    raise HTTPException(413, "File too large (max 20MB).")
+                    jobs.set_error(jid, "File too large (max 90MB / ~7 min).")
+                    raise HTTPException(413, "File too large (max 90MB / ~7 min).")
                 out.write(chunk)
     finally:
         await file.close()

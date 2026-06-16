@@ -11,7 +11,7 @@ import threading
 
 from . import correct, jobs, matcher, scribe
 
-MAX_DURATION = 150.0  # seconds (~2 min cap; we can only measure post-transcription)
+MAX_DURATION = 420.0  # seconds (~7 min cap; measured from the transcript)
 
 
 def process(job_id: str, audio_path: str) -> None:
@@ -24,7 +24,7 @@ def process(job_id: str, audio_path: str) -> None:
             jobs.set_error(job_id, "No speech detected in the audio.")
             return
         if dur > MAX_DURATION:
-            jobs.set_error(job_id, "Clip too long — keep it under ~2 minutes.")
+            jobs.set_error(job_id, "Clip too long — keep it under ~7 minutes.")
             return
 
         jobs.set_stage(job_id, "correcting")

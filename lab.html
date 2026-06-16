@@ -69,7 +69,7 @@
               </span>
               <div class="drop-copy">
                 <strong>or drop a freestyle</strong>
-                <p>MP3, WAV, M4A &middot; up to 20MB / ~2 min</p>
+                <p>MP3, WAV, M4A &middot; up to ~7 min</p>
               </div>
               <span class="drop-browse">Browse files</span>
               <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm" hidden />
@@ -252,7 +252,7 @@
           if (!okType) { alert("Please choose an audio file (MP3, WAV, M4A…)."); return; }
           overlay.hidden = false; pipeError.hidden = true; pipeCancel.hidden = true;
           setStage("uploaded"); pipeSub.textContent = "Uploading audio…";
-          if (file.size > 20 * 1024 * 1024) { pipeFail("File too large (max 20MB)."); return; }
+          if (file.size > 90 * 1024 * 1024) { pipeFail("File too large (max 90MB / ~7 min)."); return; }
           var fd = new FormData(); fd.append("file", file);
           fetch("/api/upload", { method: "POST", body: fd })
             .then(function (r) { return r.ok ? r.json() : r.json().then(function (j) { return Promise.reject(j.detail || "Upload failed."); }); })
