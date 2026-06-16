@@ -126,7 +126,7 @@ def _parse_query(query: str) -> tuple[str, str]:
 
 def search(query: str, page_size: int = 10) -> dict:
     if not _key():
-        return _mock_search(query)
+        return {"query": query, "count": 0, "results": []}
     q_track, q_artist = _parse_query(query)
     try:
         params: dict = dict(page_size=page_size, page=1, s_track_rating="desc", f_has_lyrics=1)
@@ -144,7 +144,9 @@ def search(query: str, page_size: int = 10) -> dict:
         results = [_track_row(t["track"]) for t in tracks if "track" in t]
         return {"query": query, "count": len(results), "results": results}
     except Exception:
-        return _mock_search(query)
+        # Real-data only: never fall back to canned results — return empty so the
+        # FE shows a clean "no results" state instead of demo songs.
+        return {"query": query, "count": 0, "results": []}
 
 
 # ---------------------------------------------------------------------------
@@ -173,9 +175,14 @@ def _parse_subtitle(subtitle_body: str) -> list[dict]:
     return lines
 
 
+class TrackUnavailable(Exception):
+    """Raised when a real track + lyrics can't be fetched. The caller surfaces a
+    real error/empty state — we never substitute canned demo lyrics."""
+
+
 def track(track_id: str) -> dict:
     if not _key():
-        return _mock_track(track_id)
+        raise TrackUnavailable("Musixmatch key not configured")
     try:
         # 1. Track metadata
         meta = _get("track.get", track_id=track_id)
@@ -220,47 +227,6 @@ def track(track_id: str) -> dict:
             "synced": synced,
             "sections": [{"name": "Lyrics", "lines": lines}],
         }
-    except Exception:
-        return _mock_track(track_id)
-
-
-# ---------------------------------------------------------------------------
-# Mock fallbacks (MOCK_MODE or when Musixmatch key is absent)
-# ---------------------------------------------------------------------------
-
-_MOCK_LINES = [
-    {"id": "m0", "text": "Top down, city lights bleed into the rain", "t": 0.0},
-    {"id": "m1", "text": "I count my blessings quicker than I count the change", "t": 6.0},
-    {"id": "m2", "text": "They want the crown but never felt the weight it brings", "t": 12.0},
-    {"id": "m3", "text": "I turned my pressure into pressure-treated things", "t": 18.0},
-    {"id": "m4", "text": "Every L was just a letter in the bigger word", "t": 24.0},
-    {"id": "m5", "text": "Momma said the patient ones inherit earth", "t": 30.0},
-    {"id": "m6", "text": "Starlight, I been chasing it my whole life", "t": 36.0},
-    {"id": "m7", "text": "Cold nights turned the hunger into cold drive", "t": 42.0},
-]
-
-_MOCK_RESULTS = [
-    {"id": "mock-1", "title": "Starlight", "artist": "Dave", "durationSec": 222,
-     "coverUrl": None, "spotifyId": None, "source": "musixmatch"},
-    {"id": "mock-2", "title": "Sprinter", "artist": "Dave & Central Cee", "durationSec": 229,
-     "coverUrl": None, "spotifyId": None, "source": "musixmatch"},
-    {"id": "mock-3", "title": "Black", "artist": "Dave", "durationSec": 241,
-     "coverUrl": None, "spotifyId": None, "source": "musixmatch"},
-]
-
-
-def _mock_search(query: str) -> dict:
-    return {"query": query, "count": len(_MOCK_RESULTS), "results": _MOCK_RESULTS}
-
-
-def _mock_track(track_id: str) -> dict:
-    return {
-        "id": track_id,
-        "title": "Starlight",
-        "artist": "Dave",
-        "durationSec": 222,
-        "coverUrl": None,
-        "spotifyId": None,
-        "synced": True,
-        "sections": [{"name": "Lyrics", "lines": _MOCK_LINES}],
-    }
+    except Exception as exc:
+        # Real-data only: surface the failure rather than serving demo lyrics.
+        raise TrackUnavailable("Track lyrics unavailable") from exc

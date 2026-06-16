@@ -82,58 +82,10 @@
             <h2>Recent decodes</h2>
             <div class="recents-head-actions">
               <a class="view-all" href="./decodes.html">View all <span aria-hidden="true">&rarr;</span></a>
-              <button class="state-toggle" id="stateToggle" type="button" aria-pressed="false">
-                View empty state
-              </button>
             </div>
           </header>
 
-          <div class="recents-grid" id="recentsGrid">
-            <a class="decode-card" href="./decode.html">
-              <span class="card-art">
-                <img src="./assets/tracks/starlight-cover.jpg" alt="Starlight artwork" />
-              </span>
-              <span class="card-meta">
-                <strong>Starlight</strong>
-                <span class="card-artist">Dave</span>
-              </span>
-              <span class="score-chip">87</span>
-            </a>
-
-            <a class="decode-card" href="./decode.html">
-              <span class="card-art cover-ph cover-ph--blue" aria-hidden="true"></span>
-              <span class="card-meta">
-                <strong>Sprinter</strong>
-                <span class="card-artist">Dave &amp; Central Cee</span>
-              </span>
-              <span class="score-chip">82</span>
-            </a>
-
-            <a class="decode-card" href="./decode.html">
-              <span class="card-art cover-ph cover-ph--orange" aria-hidden="true"></span>
-              <span class="card-meta">
-                <strong>Vossi Bop</strong>
-                <span class="card-artist">Stormzy</span>
-              </span>
-              <span class="score-chip">79</span>
-            </a>
-
-            <a class="decode-card" href="./decode.html">
-              <span class="card-art card-art-wave" aria-hidden="true">
-                <span style="--h: 36%"></span>
-                <span style="--h: 72%"></span>
-                <span style="--h: 48%"></span>
-                <span style="--h: 88%"></span>
-                <span style="--h: 56%"></span>
-                <span style="--h: 30%"></span>
-              </span>
-              <span class="card-meta">
-                <strong>Freestyle take 03</strong>
-                <span class="card-artist">Uploaded &middot; 1:42</span>
-              </span>
-              <span class="score-chip">74</span>
-            </a>
-          </div>
+          <div class="recents-grid" id="recentsGrid"></div>
 
           <div class="recents-empty" id="recentsEmpty" hidden>
             <p>Nothing decoded yet &mdash; your first bar is one search away.</p>
@@ -174,16 +126,33 @@
           window.location.href = "./results.html" + (q ? "?q=" + encodeURIComponent(q) : "");
         });
 
-        var toggle = document.getElementById("stateToggle");
+        /* ── Recent decodes — real, from this device's board (scope=mine) ── */
         var grid = document.getElementById("recentsGrid");
         var empty = document.getElementById("recentsEmpty");
-        toggle.addEventListener("click", function () {
-          var showEmpty = empty.hidden;
-          empty.hidden = !showEmpty;
-          grid.hidden = showEmpty;
-          toggle.setAttribute("aria-pressed", String(showEmpty));
-          toggle.textContent = showEmpty ? "View recents" : "View empty state";
-        });
+        function _esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+        function _ini(s){ var p=String(s||"").trim().split(/\s+/).filter(Boolean); return (p.length?(p[0][0]+(p[1]?p[1][0]:"")):"?").toUpperCase(); }
+        function _recentCard(e){
+          var title=e.title||(e.source==="freestyle"?"Untitled freestyle":"Untitled");
+          var artist=e.artist||(e.source==="freestyle"?"You":"Unknown artist");
+          var score=(typeof e.overall==="number")?e.overall:(typeof e.technical==="number"?e.technical:null);
+          var href=e.source==="freestyle"
+            ? "./decode.html?upload="+encodeURIComponent(String(e.id).replace(/^upload-/,""))
+            : "./decode.html?id="+encodeURIComponent(e.id);
+          var art=e.coverUrl
+            ? '<span class="card-art"><img src="'+_esc(e.coverUrl)+'" alt="'+_esc(title)+' artwork" onerror="this.parentNode.classList.add(\'cover-ph\',\'is-mono\');this.parentNode.textContent=\''+_esc(_ini(title||artist))+'\'" /></span>'
+            : '<span class="card-art is-mono">'+_esc(_ini(title||artist))+'</span>';
+          return '<a class="decode-card" href="'+_esc(href)+'">'+art+
+            '<span class="card-meta"><strong>'+_esc(title)+'</strong><span class="card-artist">'+_esc(artist)+'</span></span>'+
+            '<span class="score-chip">'+(score==null?"&mdash;":score)+'</span></a>';
+        }
+        fetch("/api/scoreboard?window=all&scope=mine&sort=recent&limit=6",{credentials:"same-origin"})
+          .then(function(r){ return r.ok?r.json():[]; })
+          .then(function(items){
+            if(!items.length){ grid.hidden=true; empty.hidden=false; return; }
+            grid.hidden=false; empty.hidden=true;
+            grid.innerHTML=items.map(_recentCard).join("");
+          })
+          .catch(function(){ grid.hidden=true; empty.hidden=false; });
 
         var drop = document.getElementById("dropzone");
         var fileInput = document.getElementById("fileInput");

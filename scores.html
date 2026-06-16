@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>16 Lab — Scores</title>
-    <meta name="description" content="The pen game, measured on two axes — Technical craft (deterministic) and Depth lyricism (AI) — for every track and freestyle decoded on 16 Lab." />
+    <meta name="description" content="Live global leaderboard — every track and freestyle decoded on 16 Lab, ranked on two axes: Technical craft (deterministic) and Depth lyricism (AI)." />
     <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,8 +40,8 @@
           <div class="scores-title">
             <h1>Scores</h1>
             <p class="scores-sub">
-              Two axes, ranked apart &mdash; <strong>Technical&middot;craft</strong> (deterministic) and <strong>Depth&middot;lyricism</strong> (AI).
-              <span>A plain-but-deep record and a flashy-but-shallow one trade places depending on the lens.</span>
+              A live global board of everything decoded &mdash; ranked on <strong>Overall</strong>, the mean of <strong>Technical&middot;craft</strong> and <strong>Depth&middot;lyricism</strong>.
+              <span>Resets daily. Switch to All-time, or filter to just yours.</span>
             </p>
           </div>
           <div class="state-switch mode-switch" role="group" aria-label="View mode">
@@ -52,23 +52,27 @@
 
         <!-- MODE 1: Leaderboard -->
         <section class="leaderboard" id="leaderboard" aria-label="Leaderboard">
-          <!-- Controls: sort axis + filter -->
           <div class="lb-controls">
             <div class="lb-control">
-              <span class="lb-control-label">Rank by</span>
-              <div class="state-switch" id="sortGroup" role="group" aria-label="Sort by">
-                <button type="button" class="state-pill is-active" data-sort="technical">Technical</button>
-                <button type="button" class="state-pill" data-sort="depth">Depth</button>
-                <button type="button" class="state-pill" data-sort="recent">Recent</button>
+              <span class="lb-control-label">When</span>
+              <div class="state-switch" id="windowGroup" role="group" aria-label="Window">
+                <button type="button" class="state-pill is-active" data-window="today">Today</button>
+                <button type="button" class="state-pill" data-window="all">All-time</button>
               </div>
             </div>
             <div class="lb-control">
-              <span class="lb-control-label">Show</span>
-              <div class="state-switch" id="filterGroup" role="group" aria-label="Filter">
-                <button type="button" class="state-pill is-active" data-filter="all">All</button>
-                <button type="button" class="state-pill" data-filter="catalog">Catalog</button>
-                <button type="button" class="state-pill" data-filter="freestyle">Freestyle</button>
-                <button type="button" class="state-pill" data-filter="mine">Mine</button>
+              <span class="lb-control-label">Who</span>
+              <div class="state-switch" id="scopeGroup" role="group" aria-label="Scope">
+                <button type="button" class="state-pill is-active" data-scope="global">All</button>
+                <button type="button" class="state-pill" data-scope="mine">Mine</button>
+              </div>
+            </div>
+            <div class="lb-control">
+              <span class="lb-control-label">Rank by</span>
+              <div class="state-switch" id="sortGroup" role="group" aria-label="Sort by">
+                <button type="button" class="state-pill is-active" data-sort="overall">Overall</button>
+                <button type="button" class="state-pill" data-sort="depth">Depth</button>
+                <button type="button" class="state-pill" data-sort="technical">Technical</button>
               </div>
             </div>
           </div>
@@ -77,17 +81,16 @@
             <span class="lbh-rank">#</span>
             <span class="lbh-cover"></span>
             <span class="lbh-track">Track</span>
-            <span class="lbh-axis">Technical</span>
-            <span class="lbh-axis">Depth</span>
+            <span class="lbh-axis">Overall</span>
+            <span class="lbh-axis">Craft &middot; Lyric</span>
             <span class="lbh-tags">Source &middot; read</span>
           </div>
           <ol class="lb-list" id="lbList"></ol>
 
-          <!-- Empty / no-match states -->
           <div class="lb-empty" id="lbEmpty" hidden>
             <span class="lb-empty-mark" aria-hidden="true"></span>
             <p id="lbEmptyMsg">No decodes yet &mdash; decode a track to put it on the board.</p>
-            <a class="btn-pill" id="lbEmptyCta" href="./lab.html">Decode a track</a>
+            <div class="lb-empty-actions" id="lbEmptyActions"></div>
           </div>
         </section>
 
@@ -95,12 +98,12 @@
         <section class="compare" id="compare" aria-label="Compare two tracks" hidden>
           <div class="cmp-grid">
             <!-- Slot A -->
-            <div class="cmp-slot cmp-slot--a">
+            <div class="cmp-slot cmp-slot--a" id="slotA">
               <span class="cmp-slot-tag">Track A</span>
               <div class="cmp-picker">
                 <span class="cmp-avatar" id="avatarA"></span>
                 <div class="cmp-pick-meta">
-                  <label class="cmp-pick-label" for="selectA">Choose track</label>
+                  <label class="cmp-pick-label" for="selectA">Choose a song</label>
                   <div class="cmp-select-wrap">
                     <select id="selectA" class="cmp-select" aria-label="Track A"></select>
                     <span class="cmp-caret" aria-hidden="true"></span>
@@ -123,12 +126,12 @@
             <span class="cmp-vs" aria-hidden="true">vs</span>
 
             <!-- Slot B -->
-            <div class="cmp-slot cmp-slot--b">
+            <div class="cmp-slot cmp-slot--b" id="slotB">
               <span class="cmp-slot-tag">Track B</span>
               <div class="cmp-picker">
                 <span class="cmp-avatar" id="avatarB"></span>
                 <div class="cmp-pick-meta">
-                  <label class="cmp-pick-label" for="selectB">Choose track</label>
+                  <label class="cmp-pick-label" for="selectB">Choose a song</label>
                   <div class="cmp-select-wrap">
                     <select id="selectB" class="cmp-select" aria-label="Track B"></select>
                     <span class="cmp-caret" aria-hidden="true"></span>
@@ -149,10 +152,8 @@
             </div>
           </div>
 
-          <!-- Paired metric bars (Technical + Depth groups) -->
           <div class="cmp-metrics" id="cmpMetrics"></div>
 
-          <!-- Verdict -->
           <div class="cmp-verdict">
             <span class="cmp-verdict-ico" aria-hidden="true"></span>
             <p id="verdict"></p>
@@ -166,50 +167,35 @@
         "use strict";
 
         /* ============================================================
-           Scores — real, dual-axis board fed by /api/scoreboard.
-           Every track/freestyle a user decodes becomes an entry with
-           Technical (deterministic, always present) and Depth (AI,
-           nullable). No mock fallback; no lyric content anywhere.
+           Real, global, dual-axis board fed by /api/scoreboard.
+           Every track/freestyle a user decodes is an entry. Daily by
+           default; All-time + Mine available. No mock anywhere.
            ============================================================ */
 
         function esc(t) {
           return String(t == null ? "" : t)
-            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
         function num(v) { return typeof v === "number" && isFinite(v) ? v : null; }
+        function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-        /* Initials placeholder when a cover is null (share-card pattern). */
         function initials(s) {
           var parts = String(s || "").trim().split(/\s+/).filter(Boolean);
           if (!parts.length) return "?";
-          var i = parts[0][0] + (parts[1] ? parts[1][0] : "");
-          return i.toUpperCase();
+          return (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
         }
         function coverHTML(e, cls) {
-          if (e.coverUrl) {
-            return '<span class="' + cls + '"><img src="' + esc(e.coverUrl) + '" alt="" /></span>';
-          }
-          var seed = e.title || e.artist || e.id;
-          return '<span class="' + cls + ' is-mono">' + esc(initials(seed)) + "</span>";
+          if (e.coverUrl) return '<span class="' + cls + '"><img src="' + esc(e.coverUrl) + '" alt="" onerror="this.parentNode.classList.add(\'is-mono\');this.parentNode.textContent=\'' + esc(initials(e.title || e.artist || e.id)) + '\'" /></span>';
+          return '<span class="' + cls + ' is-mono">' + esc(initials(e.title || e.artist || e.id)) + "</span>";
         }
-        function displayTitle(e) {
-          if (e.title) return e.title;
-          return e.source === "freestyle" ? "Untitled freestyle" : "Untitled";
-        }
-        function displayArtist(e) {
-          if (e.artist) return e.artist;
-          return e.source === "freestyle" ? "You" : "Unknown artist";
-        }
+        function displayTitle(e) { return e.title || (e.source === "freestyle" ? "Untitled freestyle" : "Untitled"); }
+        function displayArtist(e) { return e.artist || (e.source === "freestyle" ? "You" : "Unknown artist"); }
+        function jobIdOf(e) { return String(e.id).replace(/^upload-/, ""); }
         function rowHref(e) {
-          if (e.source === "freestyle") {
-            var jobId = String(e.id).replace(/^upload-/, "");
-            return "./decode.html?upload=" + encodeURIComponent(jobId);
-          }
-          return "./decode.html?id=" + encodeURIComponent(e.id);
+          return e.source === "freestyle"
+            ? "./decode.html?upload=" + encodeURIComponent(jobIdOf(e))
+            : "./decode.html?id=" + encodeURIComponent(e.id);
         }
-
-        /* Insight from the gap between the two axes (only when both exist). */
         function insight(e) {
           var t = num(e.technical), d = num(e.depth);
           if (t == null || d == null) return null;
@@ -218,8 +204,12 @@
           return { text: "Balanced", cls: "is-balanced" };
         }
 
-        function api(qs) {
+        function apiList(qs) {
           return fetch("/api/scoreboard" + (qs || ""), { credentials: "same-origin" })
+            .then(function (r) { if (!r.ok) throw r.status; return r.json(); });
+        }
+        function apiEntry(id) {
+          return fetch("/api/scoreboard/" + encodeURIComponent(id), { credentials: "same-origin" })
             .then(function (r) { if (!r.ok) throw r.status; return r.json(); });
         }
 
@@ -228,39 +218,35 @@
         var lbHead = document.querySelector(".lb-head");
         var lbEmpty = document.getElementById("lbEmpty");
         var lbEmptyMsg = document.getElementById("lbEmptyMsg");
-        var lbEmptyCta = document.getElementById("lbEmptyCta");
+        var lbEmptyActions = document.getElementById("lbEmptyActions");
+        var windowGroup = document.getElementById("windowGroup");
+        var scopeGroup = document.getElementById("scopeGroup");
         var sortGroup = document.getElementById("sortGroup");
-        var filterGroup = document.getElementById("filterGroup");
         var compareModePill = document.getElementById("compareModePill");
 
-        var state = { sort: "technical", filter: "all" };
-        var ALL = [];          // full board (filter=all) — drives compare + counts
-        var boardCount = 0;    // total entries on the board
+        var state = { window: "today", scope: "global", sort: "overall" };
+        var ALL = [];          // full all-time global board (compare + counts)
 
-        function chip(label, value, axis, active) {
-          var has = value != null;
-          var cls = "lb-chip lb-chip--" + axis + (active ? " is-on" : " is-dim") + (has ? "" : " is-null");
-          return (
-            '<span class="' + cls + '">' +
-              '<span class="lb-chip-num">' + (has ? value : "&mdash;") + "</span>" +
-              '<span class="lb-chip-cap">' + label + "</span>" +
-            "</span>"
-          );
+        function axesMini(e, sort) {
+          var t = num(e.technical), d = num(e.depth);
+          function row(label, val, axis) {
+            var on = sort === axis;
+            return '<span class="lb-axis-mini' + (on ? " is-on" : "") + " lb-axis-mini--" + axis + '">' +
+              '<span class="lb-axis-lab">' + label + "</span>" +
+              '<span class="lb-axis-val' + (val == null ? " is-null" : "") + '">' + (val == null ? "&mdash;" : val) + "</span>" +
+            "</span>";
+          }
+          return '<span class="lb-axes">' + row("Craft", t, "technical") + row("Lyric", d, "depth") + "</span>";
         }
 
         function rowHTML(e, rank, sort) {
-          var t = num(e.technical), d = num(e.depth);
-          var techActive = sort === "technical";
-          var depthActive = sort === "depth";
-          // "Recent" keeps both lit so neither axis looks demoted.
-          if (sort === "recent") { techActive = true; depthActive = true; }
-
+          var ov = num(e.overall);
+          var ovActive = sort === "overall";
           var ins = insight(e);
-          var src = e.source === "freestyle" ? "Freestyle" : "Catalog";
+          var srcLabel = e.source === "freestyle" ? "Freestyle" : "Catalog";
           var tags =
-            '<span class="lb-src lb-src--' + (e.source === "freestyle" ? "freestyle" : "catalog") + '">' + src + "</span>" +
+            '<span class="lb-src lb-src--' + (e.source === "freestyle" ? "freestyle" : "catalog") + '">' + srcLabel + "</span>" +
             (ins ? '<span class="lb-insight ' + ins.cls + '">' + ins.text + "</span>" : "");
-
           var topCls = rank <= 3 ? " is-top is-top-" + rank : "";
           return (
             '<li class="lb-row' + topCls + '" tabindex="0" role="link" ' +
@@ -271,23 +257,24 @@
                 '<span class="lb-name">' + esc(displayTitle(e)) + "</span>" +
                 '<span class="lb-artist">' + esc(displayArtist(e)) + "</span>" +
               "</span>" +
-              chip("Technical", t, "tech", techActive) +
-              chip("Depth", d, "depth", depthActive) +
+              '<span class="lb-overall' + (ovActive ? " is-on" : "") + (ov == null ? " is-null" : "") + '">' +
+                '<span class="lb-overall-num">' + (ov == null ? "&mdash;" : ov) + "</span>" +
+                '<span class="lb-overall-cap">Overall</span>' +
+              "</span>" +
+              axesMini(e, sort) +
               '<span class="lb-tags">' + tags + "</span>" +
             "</li>"
           );
         }
 
         function renderLeaderboard(entries) {
-          lbList.innerHTML = entries.map(function (e, i) {
-            return rowHTML(e, i + 1, state.sort);
-          }).join("");
+          lbList.innerHTML = entries.map(function (e, i) { return rowHTML(e, i + 1, state.sort); }).join("");
         }
 
-        function showEmpty(msg, cta) {
+        function showEmpty(msg, actions) {
           lbEmpty.hidden = false;
           lbEmptyMsg.innerHTML = msg;
-          lbEmptyCta.hidden = !cta;
+          lbEmptyActions.innerHTML = actions || "";
           lbHead.style.display = "none";
           lbList.hidden = true;
         }
@@ -297,64 +284,75 @@
           lbList.hidden = false;
         }
 
+        var DECODE_CTA = '<a class="btn-pill" href="./lab.html">Decode a track</a>';
+        var ALLTIME_CTA = '<button type="button" class="btn-pill btn-pill--ghost" id="goAllTime">See All-time</button>';
+
+        function wireAllTimeBtn() {
+          var b = document.getElementById("goAllTime");
+          if (b) b.addEventListener("click", function () {
+            state.window = "all";
+            setActive(windowGroup, windowGroup.querySelector('[data-window="all"]'));
+            loadLeaderboard();
+          });
+        }
+
         function loadLeaderboard() {
-          var qs = "?sort=" + state.sort + "&filter=" + state.filter + "&limit=200";
-          return api(qs).then(function (entries) {
+          var qs = "?window=" + state.window + "&scope=" + state.scope + "&sort=" + state.sort + "&limit=300";
+          return apiList(qs).then(function (entries) {
             if (!entries.length) {
-              if (boardCount === 0) {
-                showEmpty("No decodes yet &mdash; decode a track to put it on the board.", true);
-              } else if (state.filter === "mine") {
-                showEmpty("Nothing here yet under <strong>Mine</strong> &mdash; decode a track and it shows up on this device.", true);
+              if (state.scope === "mine") {
+                showEmpty("Nothing under <strong>Mine</strong> " + (state.window === "today" ? "today" : "yet") +
+                  " &mdash; decode a track and it shows up here on this device.", DECODE_CTA);
+              } else if (state.window === "today") {
+                var hasAllTime = ALL.length > 0;
+                showEmpty("Quiet so far today &mdash; no decodes have landed on the board yet.",
+                  DECODE_CTA + (hasAllTime ? " " + ALLTIME_CTA : ""));
+                wireAllTimeBtn();
               } else {
-                showEmpty("No <strong>" + esc(state.filter) + "</strong> entries on the board yet.", false);
+                showEmpty("No decodes yet &mdash; decode a track to put it on the board.", DECODE_CTA);
               }
               return;
             }
             hideEmpty();
             renderLeaderboard(entries);
           }).catch(function () {
-            showEmpty("Couldn&rsquo;t load the board &mdash; try again in a moment.", false);
+            showEmpty("Couldn&rsquo;t load the board &mdash; try again in a moment.", "");
           });
         }
 
-        sortGroup.addEventListener("click", function (ev) {
-          var btn = ev.target.closest("[data-sort]");
-          if (!btn) return;
-          state.sort = btn.getAttribute("data-sort");
-          setActive(sortGroup, btn);
-          loadLeaderboard();
-        });
-        filterGroup.addEventListener("click", function (ev) {
-          var btn = ev.target.closest("[data-filter]");
-          if (!btn) return;
-          state.filter = btn.getAttribute("data-filter");
-          setActive(filterGroup, btn);
-          loadLeaderboard();
-        });
         function setActive(group, btn) {
-          group.querySelectorAll(".state-pill").forEach(function (p) {
-            p.classList.toggle("is-active", p === btn);
-          });
+          group.querySelectorAll(".state-pill").forEach(function (p) { p.classList.toggle("is-active", p === btn); });
         }
+        windowGroup.addEventListener("click", function (ev) {
+          var b = ev.target.closest("[data-window]"); if (!b) return;
+          state.window = b.getAttribute("data-window"); setActive(windowGroup, b); loadLeaderboard();
+        });
+        scopeGroup.addEventListener("click", function (ev) {
+          var b = ev.target.closest("[data-scope]"); if (!b) return;
+          state.scope = b.getAttribute("data-scope"); setActive(scopeGroup, b); loadLeaderboard();
+        });
+        sortGroup.addEventListener("click", function (ev) {
+          var b = ev.target.closest("[data-sort]"); if (!b) return;
+          state.sort = b.getAttribute("data-sort"); setActive(sortGroup, b); loadLeaderboard();
+        });
 
-        // Row navigation (click + keyboard).
         lbList.addEventListener("click", function (ev) {
-          var row = ev.target.closest(".lb-row");
-          if (row) window.location.href = row.getAttribute("data-href");
+          var row = ev.target.closest(".lb-row"); if (row) window.location.href = row.getAttribute("data-href");
         });
         lbList.addEventListener("keydown", function (ev) {
           if (ev.key !== "Enter" && ev.key !== " ") return;
-          var row = ev.target.closest(".lb-row");
-          if (row) { ev.preventDefault(); window.location.href = row.getAttribute("data-href"); }
+          var row = ev.target.closest(".lb-row"); if (row) { ev.preventDefault(); window.location.href = row.getAttribute("data-href"); }
         });
 
-        /* ---------------- Compare (dual axis, song vs song) ---------------- */
+        /* ---------------- Compare (real songs, live analyzing) ---------------- */
         var selectA = document.getElementById("selectA");
         var selectB = document.getElementById("selectB");
         var avatarA = document.getElementById("avatarA");
         var avatarB = document.getElementById("avatarB");
         var subA = document.getElementById("subA");
         var subB = document.getElementById("subB");
+        var slotElA = document.getElementById("slotA");
+        var slotElB = document.getElementById("slotB");
         var bigTechA = document.getElementById("bigTechA");
         var bigTechB = document.getElementById("bigTechB");
         var bigDepthA = document.getElementById("bigDepthA");
@@ -363,204 +361,234 @@
         var verdictEl = document.getElementById("verdict");
         var compareReady = false;
 
-        function entryById(id) {
-          for (var i = 0; i < ALL.length; i++) if (ALL[i].id === id) return ALL[i];
-          return null;
-        }
+        var SLOT = {
+          a: { sel: selectA, avatar: avatarA, sub: subA, el: slotElA, bigT: bigTechA, bigD: bigDepthA, entry: null, ready: false, token: 0 },
+          b: { sel: selectB, avatar: avatarB, sub: subB, el: slotElB, bigT: bigTechB, bigD: bigDepthB, entry: null, ready: false, token: 0 }
+        };
 
         function fillSelects() {
           var opts = ALL.map(function (e) {
             var tag = e.source === "freestyle" ? " · Freestyle" : "";
-            return '<option value="' + esc(e.id) + '">' +
-              esc(displayTitle(e) + " — " + displayArtist(e) + tag) + "</option>";
+            return '<option value="' + esc(e.id) + '">' + esc(displayTitle(e) + " — " + displayArtist(e) + tag) + "</option>";
           }).join("");
           selectA.innerHTML = opts;
           selectB.innerHTML = opts;
-          if (ALL.length >= 2) {
-            selectA.value = ALL[0].id;
-            selectB.value = ALL[1].id;
-          }
+          if (ALL.length >= 2) { selectA.value = ALL[0].id; selectB.value = ALL[1].id; }
         }
-
-        // Prevent A == B by disabling the chosen option in the opposite select.
         function syncOptionLocks() {
           [[selectA, selectB], [selectB, selectA]].forEach(function (pair) {
             var other = pair[1].value;
-            Array.prototype.forEach.call(pair[0].options, function (o) {
-              o.disabled = (o.value === other);
-            });
+            Array.prototype.forEach.call(pair[0].options, function (o) { o.disabled = (o.value === other); });
           });
         }
 
         function setAvatar(el, e, side) {
           var base = "cmp-avatar cmp-avatar--" + side;
           if (e.coverUrl) {
-            el.className = base;
-            el.innerHTML = '<img src="' + esc(e.coverUrl) + '" alt="" />';
+            el.className = base; el.innerHTML = '<img src="' + esc(e.coverUrl) + '" alt="" onerror="this.parentNode.className=\'' + base + ' is-mono\';this.parentNode.textContent=\'' + esc(initials(e.title || e.artist || e.id)) + '\'" />';
           } else {
-            el.className = base + " is-mono";
-            el.innerHTML = esc(initials(e.title || e.artist || e.id));
+            el.className = base + " is-mono"; el.innerHTML = esc(initials(e.title || e.artist || e.id));
           }
         }
+        function setBig(el, v) { el.innerHTML = v == null ? "&mdash;" : v; el.classList.toggle("is-null", v == null); }
 
-        function setBig(el, v) {
-          el.innerHTML = v == null ? "&mdash;" : v;
-          el.classList.toggle("is-null", v == null);
+        function markAnalyzing(s) {
+          s.el.classList.add("is-analyzing");
+          s.bigT.textContent = "···"; s.bigD.textContent = "···";
+          s.sub.textContent = "Analyzing… (AI reading the bars)";
         }
 
-        // Pair two metric lists by key (fallback to index); preserve A's order,
-        // then append any keys only B has.
+        // Fetch the lyric lines needed to compute Depth live (catalog re-fetches
+        // from Musixmatch; freestyle re-reads the transcript). Returns [] if the
+        // source has expired — Depth then stays null.
+        function fetchLyrics(e) {
+          if (e.source === "freestyle") {
+            return fetch("/api/upload/" + encodeURIComponent(jobIdOf(e)) + "/result")
+              .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+              .then(flattenLines).catch(function () { return []; });
+          }
+          return fetch("/api/track/" + encodeURIComponent(e.id))
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+            .then(flattenLines).catch(function () { return []; });
+        }
+        function flattenLines(res) {
+          var out = [];
+          (res.sections || []).forEach(function (sec) {
+            (sec.lines || []).forEach(function (ln) { var t = (ln.text || "").trim(); if (t) out.push(t); });
+          });
+          return out;
+        }
+
+        function computeDepth(e) {
+          return fetchLyrics(e).then(function (texts) {
+            if (!texts.length) return e; // expired/unavailable → leave depth null
+            return fetch("/api/depth", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ trackId: e.id, lines: texts, track: { title: displayTitle(e), artist: displayArtist(e) } })
+            }).then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+              .then(function (res) {
+                e.depth = num(res.depth); e.depthSub = res.sub || []; e.depthRationale = res.rationale || "";
+                if (e.depth != null) e.overall = Math.round((e.technical + e.depth) / 2);
+                persistEntry(e); // write the freshly-computed Depth back to the board
+                return e;
+              }).catch(function () { return e; });
+          });
+        }
+
+        function persistEntry(e) {
+          fetch("/api/scoreboard", {
+            method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin",
+            body: JSON.stringify({
+              id: e.id, source: e.source, title: e.title, artist: e.artist,
+              coverUrl: e.coverUrl || null, spotifyId: e.spotifyId || null,
+              technical: e.technical, metrics: e.metrics || [],
+              depth: e.depth, depthSub: e.depthSub || null, depthRationale: e.depthRationale || null
+            })
+          }).catch(function () {});
+        }
+
+        // Hydrate a slot: show analyzing, fetch entry, compute Depth if missing,
+        // then a brief reveal even when cached (genuine analyzing → numbers).
+        function hydrate(s) {
+          var id = s.sel.value;
+          if (!id) return;
+          var token = ++s.token;
+          s.ready = false; s.entry = null;
+          markAnalyzing(s);
+          maybeRenderCompare();
+          apiEntry(id).then(function (e) {
+            if (e.depth != null) return delay(500).then(function () { return e; });
+            return computeDepth(e);
+          }).then(function (e) {
+            if (token !== s.token) return; // a newer pick superseded this one
+            s.entry = e; s.ready = true;
+            revealSlot(s, e);
+            maybeRenderCompare();
+          }).catch(function () {
+            if (token !== s.token) return;
+            s.entry = null; s.ready = false;
+            s.el.classList.remove("is-analyzing");
+            s.sub.textContent = "Couldn’t load this song.";
+            setBig(s.bigT, null); setBig(s.bigD, null);
+          });
+        }
+
+        function revealSlot(s, e) {
+          s.el.classList.remove("is-analyzing");
+          var side = s === SLOT.a ? "a" : "b";
+          setAvatar(s.avatar, e, side);
+          s.sub.textContent = displayArtist(e) + (e.source === "freestyle" ? " · Freestyle" : "");
+          setBig(s.bigT, num(e.technical));
+          setBig(s.bigD, num(e.depth));
+        }
+
         function pairMetrics(listA, listB) {
           listA = listA || []; listB = listB || [];
-          var bByKey = {};
-          listB.forEach(function (m, i) { bByKey[m.key || ("idx" + i)] = m; });
+          var bByKey = {}; listB.forEach(function (m, i) { bByKey[m.key || ("idx" + i)] = m; });
           var seen = {}, rows = [];
           listA.forEach(function (m, i) {
-            var k = m.key || ("idx" + i);
-            seen[k] = true;
-            var b = bByKey[k];
+            var k = m.key || ("idx" + i); seen[k] = true; var b = bByKey[k];
             rows.push({ label: m.label || m.key || ("Metric " + (i + 1)), a: num(m.value), b: b ? num(b.value) : null });
           });
           listB.forEach(function (m, i) {
-            var k = m.key || ("idx" + i);
-            if (seen[k]) return;
+            var k = m.key || ("idx" + i); if (seen[k]) return;
             rows.push({ label: m.label || m.key || ("Metric " + (i + 1)), a: null, b: num(m.value) });
           });
           return rows;
         }
-
         function barGroup(title, sub, rows) {
           if (!rows.length) return "";
           var body = rows.map(function (r) {
             var aWin = r.a != null && r.b != null && r.a > r.b;
             var bWin = r.a != null && r.b != null && r.b > r.a;
             function side(val, who, win) {
-              return (
-                '<div class="cmp-bar-row cmp-bar-row--' + who + '">' +
-                  '<span class="cmp-val' + (win ? " is-win" : "") + '">' + (val == null ? "&mdash;" : val) + "</span>" +
-                  '<span class="cmp-track"><span class="cmp-fill cmp-fill--' + who + '" style="width:' + (val == null ? 0 : val) + '%"></span></span>' +
-                "</div>"
-              );
+              return '<div class="cmp-bar-row cmp-bar-row--' + who + '">' +
+                '<span class="cmp-val' + (win ? " is-win" : "") + '">' + (val == null ? "&mdash;" : val) + "</span>" +
+                '<span class="cmp-track"><span class="cmp-fill cmp-fill--' + who + '" style="width:' + (val == null ? 0 : val) + '%"></span></span>' +
+              "</div>";
             }
-            return (
-              '<div class="cmp-metric">' +
-                '<div class="cmp-metric-label">' + esc(r.label) + "</div>" +
-                '<div class="cmp-bars">' + side(r.a, "a", aWin) + side(r.b, "b", bWin) + "</div>" +
-              "</div>"
-            );
+            return '<div class="cmp-metric"><div class="cmp-metric-label">' + esc(r.label) + "</div>" +
+              '<div class="cmp-bars">' + side(r.a, "a", aWin) + side(r.b, "b", bWin) + "</div></div>";
           }).join("");
-          return (
-            '<div class="cmp-mgroup">' +
-              '<div class="cmp-mgroup-head"><strong>' + esc(title) + "</strong><span>" + esc(sub) + "</span></div>" +
-              body +
-            "</div>"
-          );
+          return '<div class="cmp-mgroup"><div class="cmp-mgroup-head"><strong>' + esc(title) + "</strong><span>" + esc(sub) + "</span></div>" + body + "</div>";
         }
 
         function buildVerdict(a, b) {
-          var ta = num(a.technical), tb = num(b.technical);
-          var da = num(a.depth), db = num(b.depth);
-          var an = "<strong>" + esc(displayTitle(a)) + "</strong>";
-          var bn = "<strong>" + esc(displayTitle(b)) + "</strong>";
-
-          // Craft (always available).
+          var ta = num(a.technical), tb = num(b.technical), da = num(a.depth), db = num(b.depth);
+          var an = "<strong>" + esc(displayTitle(a)) + "</strong>", bn = "<strong>" + esc(displayTitle(b)) + "</strong>";
           var craft;
           if (ta === tb) craft = { txt: "Craft is dead level (" + ta + " each)", winner: null };
           else if (ta > tb) craft = { txt: an + " wins on craft (+" + (ta - tb) + ")", winner: "a" };
           else craft = { txt: bn + " wins on craft (+" + (tb - ta) + ")", winner: "b" };
-
-          // Lyricism (needs both depths).
           var lyric;
           if (da == null || db == null) lyric = { txt: "lyricism can&rsquo;t be compared (Depth missing)", winner: "na" };
           else if (da === db) lyric = { txt: "lyricism is level (" + da + " each)", winner: null };
           else if (da > db) lyric = { txt: an + " wins on lyricism (+" + (da - db) + ")", winner: "a" };
           else lyric = { txt: bn + " wins on lyricism (+" + (db - da) + ")", winner: "b" };
-
-          // One track sweeping both axes gets a combined sentence.
           if (craft.winner && craft.winner === lyric.winner) {
             var who = craft.winner === "a" ? an : bn;
-            var t = Math.abs(ta - tb), l = Math.abs(da - db);
-            return who + " takes both axes &mdash; craft (+" + t + ") and lyricism (+" + l + ").";
+            return who + " takes both axes &mdash; craft (+" + Math.abs(ta - tb) + ") and lyricism (+" + Math.abs(da - db) + ").";
           }
           return craft.txt + ", " + lyric.txt + ".";
         }
 
-        function renderCompare() {
-          if (!compareReady) return;
-          var a = entryById(selectA.value);
-          var b = entryById(selectB.value);
-          if (!a || !b) return;
-          if (a.id === b.id) {
-            verdictEl.innerHTML = "Pick two different tracks to compare.";
+        function maybeRenderCompare() {
+          var a = SLOT.a.entry, b = SLOT.b.entry;
+          if (!SLOT.a.ready || !SLOT.b.ready || !a || !b) {
+            cmpMetrics.innerHTML = '<p class="cmp-nometrics">Pick two songs to see the breakdown.</p>';
+            verdictEl.innerHTML = "";
             return;
           }
-          syncOptionLocks();
-
-          setAvatar(avatarA, a, "a");
-          setAvatar(avatarB, b, "b");
-          subA.textContent = displayArtist(a) + (a.source === "freestyle" ? " · Freestyle" : "");
-          subB.textContent = displayArtist(b) + (b.source === "freestyle" ? " · Freestyle" : "");
-          setBig(bigTechA, num(a.technical));
-          setBig(bigTechB, num(b.technical));
-          setBig(bigDepthA, num(a.depth));
-          setBig(bigDepthB, num(b.depth));
-
+          if (a.id === b.id) {
+            cmpMetrics.innerHTML = "";
+            verdictEl.innerHTML = "Pick two different songs to compare.";
+            return;
+          }
           var tech = pairMetrics(a.metrics, b.metrics);
           var depth = pairMetrics(a.depthSub, b.depthSub);
-          var html = barGroup("Technical", "craft · deterministic", tech) +
-                     barGroup("Depth", "lyricism · AI", depth);
-          if (!html) {
-            html = '<p class="cmp-nometrics">Per-metric breakdown isn&rsquo;t available for these entries.</p>';
-          }
-          cmpMetrics.innerHTML = html;
-
+          var html = barGroup("Technical", "craft · deterministic", tech) + barGroup("Depth", "lyricism · AI", depth);
+          cmpMetrics.innerHTML = html || '<p class="cmp-nometrics">Per-metric breakdown isn’t available for these entries.</p>';
           verdictEl.innerHTML = buildVerdict(a, b);
         }
 
-        selectA.addEventListener("change", renderCompare);
-        selectB.addEventListener("change", renderCompare);
+        selectA.addEventListener("change", function () { syncOptionLocks(); hydrate(SLOT.a); });
+        selectB.addEventListener("change", function () { syncOptionLocks(); hydrate(SLOT.b); });
 
         function setupCompare() {
           var enough = ALL.length >= 2;
           compareModePill.disabled = !enough;
-          compareModePill.title = enough ? "" : "Decode at least two tracks to compare";
+          compareModePill.title = enough ? "" : "Decode at least two songs to compare";
           compareReady = enough;
           if (!enough) return;
           fillSelects();
           syncOptionLocks();
-          renderCompare();
+          hydrate(SLOT.a);
+          hydrate(SLOT.b);
         }
 
         /* ---------------- Mode switch ---------------- */
         var modePills = Array.prototype.slice.call(document.querySelectorAll(".mode-switch [data-mode]"));
         var lb = document.getElementById("leaderboard");
         var cmp = document.getElementById("compare");
-
         function setMode(mode) {
           if (mode === "compare" && !compareReady) return;
-          modePills.forEach(function (p) {
-            p.classList.toggle("is-active", p.getAttribute("data-mode") === mode);
-          });
+          modePills.forEach(function (p) { p.classList.toggle("is-active", p.getAttribute("data-mode") === mode); });
           lb.hidden = mode !== "leaderboard";
           cmp.hidden = mode !== "compare";
         }
         modePills.forEach(function (p) {
-          p.addEventListener("click", function () {
-            if (p.disabled) return;
-            setMode(p.getAttribute("data-mode"));
-          });
+          p.addEventListener("click", function () { if (p.disabled) return; setMode(p.getAttribute("data-mode")); });
         });
 
         /* ---------------- Init ---------------- */
-        // Fetch the full board once (drives compare + total count + empty
-        // detection), then render the leaderboard with current sort/filter.
-        api("?sort=recent&filter=all&limit=200").then(function (all) {
+        // Full all-time board powers Compare + the "is there any history?" check
+        // behind the empty states; then render the (default Today) leaderboard.
+        apiList("?window=all&scope=global&sort=technical&limit=300").then(function (all) {
           ALL = all;
-          boardCount = all.length;
           setupCompare();
           return loadLeaderboard();
         }).catch(function () {
-          boardCount = 0;
+          ALL = [];
           setupCompare();
           loadLeaderboard();
         });

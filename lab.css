@@ -2865,7 +2865,7 @@ body.is-decoding .track-overview {
 
 .lb-head {
   display: grid;
-  grid-template-columns: 44px 52px minmax(0, 1fr) 86px 86px minmax(130px, 200px);
+  grid-template-columns: 44px 52px minmax(0, 1fr) 78px 96px minmax(140px, 210px);
   align-items: center;
   gap: 18px;
   padding: 0 22px 10px;
@@ -2889,7 +2889,7 @@ body.is-decoding .track-overview {
 
 .lb-row {
   display: grid;
-  grid-template-columns: 44px 52px minmax(0, 1fr) 86px 86px minmax(130px, 200px);
+  grid-template-columns: 44px 52px minmax(0, 1fr) 78px 96px minmax(140px, 210px);
   align-items: center;
   gap: 18px;
   padding: 13px 22px;
@@ -2982,6 +2982,82 @@ body.is-decoding .track-overview {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Overall — the prominent headline number (mean of both axes). */
+.lb-overall {
+  justify-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 66px;
+  padding: 8px 6px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.lb-overall.is-on {
+  background: var(--ink);
+  box-shadow: 2px 3px 0 rgba(6, 19, 31, 0.85);
+}
+
+.lb-overall-num {
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-overall.is-on .lb-overall-num { color: var(--cream); }
+.lb-overall.is-null .lb-overall-num { color: var(--ink-40); }
+
+.lb-overall-cap {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+}
+
+.lb-overall.is-on .lb-overall-cap { color: rgba(255, 250, 240, 0.65); }
+
+/* Craft + Lyric shown smaller alongside Overall; active sort axis emphasised. */
+.lb-axes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-self: center;
+}
+
+.lb-axis-mini {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 84px;
+  font-weight: 700;
+}
+
+.lb-axis-lab {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+}
+
+.lb-axis-val {
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-60);
+}
+
+.lb-axis-val.is-null { color: var(--ink-40); }
+
+.lb-axis-mini.is-on .lb-axis-val { color: var(--ink); }
+.lb-axis-mini.is-on.lb-axis-mini--technical .lb-axis-lab { color: #c24f00; }
+.lb-axis-mini.is-on.lb-axis-mini--depth .lb-axis-lab { color: #1f74c4; }
 
 /* Dual-axis score chips: the active sort is solid; the OTHER axis is always
    shown, just dimmed — that two-numbers-everywhere view is the whole point. */
@@ -3145,6 +3221,18 @@ body.is-decoding .track-overview {
 .btn-pill:hover {
   transform: translate(-2px, -2px);
   box-shadow: 5px 6px 0 rgba(6, 19, 31, 0.85);
+}
+
+.btn-pill--ghost {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+.lb-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
 }
 
 /* ---- Compare ---- */
@@ -3342,6 +3430,21 @@ body.is-decoding .track-overview {
 
 .cmp-big .cmp-big-cap { color: #c24f00; }
 .cmp-big--depth .cmp-big-cap { color: #1f74c4; }
+
+/* Analyzing state — genuine "AI reading the bars" while Depth computes/reveals. */
+.cmp-slot.is-analyzing .cmp-big-num {
+  color: var(--ink-40);
+  animation: cmp-pulse 1s ease-in-out infinite;
+}
+
+.cmp-slot.is-analyzing .cmp-sub {
+  color: var(--orange);
+}
+
+@keyframes cmp-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
 
 .cmp-vs {
   align-self: center;
@@ -3675,16 +3778,16 @@ body.is-decoding .track-overview {
   .lb-row {
     grid-template-columns: 40px 48px minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "rank avatar meta tech depth"
-      "rank avatar tags tags tags";
+      "rank avatar meta overall axes"
+      "rank avatar tags tags    tags";
     gap: 8px 14px;
   }
 
   .lb-rank { grid-area: rank; align-self: center; }
   .lb-avatar { grid-area: avatar; align-self: center; }
   .lb-meta { grid-area: meta; align-self: center; }
-  .lb-row .lb-chip--tech { grid-area: tech; align-self: center; }
-  .lb-row .lb-chip--depth { grid-area: depth; align-self: center; }
+  .lb-row .lb-overall { grid-area: overall; align-self: center; }
+  .lb-row .lb-axes { grid-area: axes; align-self: center; }
 
   .lb-row .lb-tags {
     grid-area: tags;
@@ -3960,10 +4063,10 @@ body.is-decoding .track-overview {
   }
 
   .lb-row {
-    grid-template-columns: 34px 44px 1fr 1fr;
+    grid-template-columns: 34px 44px 1fr auto;
     grid-template-areas:
-      "rank avatar meta meta"
-      "rank avatar tech depth"
+      "rank avatar meta overall"
+      "rank avatar axes axes"
       "tags tags   tags tags";
     gap: 8px 10px;
     padding: 13px 16px;
@@ -3973,13 +4076,21 @@ body.is-decoding .track-overview {
   .lb-avatar { grid-area: avatar; align-self: start; }
   .lb-meta { grid-area: meta; align-self: center; }
 
-  .lb-row .lb-chip {
-    justify-self: start;
-    min-width: 60px;
+  .lb-row .lb-overall {
+    grid-area: overall;
+    justify-self: end;
+    align-self: center;
   }
 
-  .lb-row .lb-chip--tech { grid-area: tech; }
-  .lb-row .lb-chip--depth { grid-area: depth; }
+  .lb-row .lb-axes {
+    grid-area: axes;
+    justify-self: start;
+    flex-direction: row;
+    gap: 16px;
+    margin-top: 2px;
+  }
+
+  .lb-row .lb-axis-mini { min-width: 0; gap: 6px; }
 
   .lb-row .lb-tags {
     grid-area: tags;

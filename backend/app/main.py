@@ -19,7 +19,6 @@ from . import (
     depth,
     jobs,
     llm,
-    mock,
     musixmatch,
     pipeline,
     scoreboard,
@@ -101,18 +100,6 @@ def decode_bar(req: DecodeRequest):
 
 
 # ---------------------------------------------------------------------------
-# Scoring (uses mock lyrics until Musixmatch is live)
-# ---------------------------------------------------------------------------
-
-@api.get("/track/{track_id}/score")
-def track_score(track_id: str):
-    lines = mock.lyric_lines(track_id)
-    result = scoring.score_track(lines)
-    result["trackId"] = track_id
-    return result
-
-
-# ---------------------------------------------------------------------------
 # Search — Musixmatch track.search
 # ---------------------------------------------------------------------------
 
@@ -124,12 +111,16 @@ def search(q: str = ""):
 
 
 # ---------------------------------------------------------------------------
-# Track — metadata + lyrics (synced or plain)
+# Track — metadata + lyrics (synced or plain). Real data only: if the track or
+# its lyrics can't be fetched we return an error, never canned demo lyrics.
 # ---------------------------------------------------------------------------
 
 @api.get("/track/{track_id}")
 def track(track_id: str):
-    return musixmatch.track(track_id)
+    try:
+        return musixmatch.track(track_id)
+    except musixmatch.TrackUnavailable as exc:
+        raise HTTPException(502, str(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -395,11 +386,15 @@ def scoreboard_post(req: ScoreboardEntry, request: Request, response: Response):
 
 @api.get("/scoreboard")
 def scoreboard_list(
-    request: Request, sort: str = "technical", filter: str = "all", limit: int = 200
+    request: Request,
+    window: str = "today",
+    scope: str = "global",
+    sort: str = "overall",
+    limit: int = 300,
 ):
     uid = _uid(request)
     owner = scoreboard.owner_hash(uid) if uid else None
-    return scoreboard.query(sort=sort, filt=filter, owner=owner, limit=limit)
+    return scoreboard.query(window=window, scope=scope, sort=sort, owner=owner, limit=limit)
 
 
 @api.get("/scoreboard/{entry_id}")

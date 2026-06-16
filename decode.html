@@ -41,10 +41,6 @@
             <span aria-hidden="true">/</span>
             <strong>Decode</strong>
           </div>
-          <div class="state-switch lane-switch" role="group" aria-label="Preview which lane" hidden>
-            <button type="button" class="state-pill" data-lane="freestyle">Freestyle &middot; audio</button>
-            <button type="button" class="state-pill is-active" data-lane="starlight">Catalog track</button>
-          </div>
         </div>
 
         <!-- Header strip -->
@@ -71,8 +67,8 @@
           <div class="player-bar" id="playerBar" hidden>
             <span class="player-thumb" id="playerThumb" aria-hidden="true"></span>
             <span class="player-now">
-              <strong class="player-title" id="playerTitle">Starlight</strong>
-              <span class="player-sub" id="playerArtist">Dave</span>
+              <strong class="player-title" id="playerTitle"></strong>
+              <span class="player-sub" id="playerArtist"></span>
             </span>
             <button class="player-play" id="playerPlay" type="button" aria-label="Play">
               <span class="ico-play" aria-hidden="true"></span>
@@ -168,8 +164,8 @@
                 <div class="sc-foot">
                   <span class="sc-cover" id="scCover"></span>
                   <span class="sc-track">
-                    <strong id="scTrack">Starlight</strong>
-                    <span id="scArtist">Dave</span>
+                    <strong id="scTrack"></strong>
+                    <span id="scArtist"></span>
                   </span>
                   <span class="sc-tag">decoded on <strong>16lab</strong></span>
                 </div>
@@ -236,30 +232,9 @@
         var uploadId = _params.get("upload") || "";
         var _uploadAudio = null; /* real <audio> for the uploaded freestyle */
 
-        /* ── Freestyle mock (keeps the demo lane working) ────────── */
-        var FREESTYLE = {
-          title:"Freestyle — Untitled", artist:"You", duration:"1:42",
-          score:74, cover:"wave", audio:true, source:"scribe", feat:3,
-          metrics:[
-            {key:"rhyme",   label:"Rhyme density",       v:71},
-            {key:"internal",label:"Internal rhymes",      v:66},
-            {key:"vocab",   label:"Vocabulary richness",  v:77},
-            {key:"multi",   label:"Multisyllabic rate",   v:80},
-            {key:"variance",label:"Syllable variance",    v:62}
-          ],
-          sections:[{name:"Verse",lines:[
-            {t:0, text:"No beat picked, I’m just talking off the dome"},
-            {t:6, text:"Mic in the kitchen, made a studio at home"},
-            {t:13,text:"First take energy, I never write it twice"},
-            {t:20,text:"Every other bar I’m rolling double on the dice"},
-            {t:34,text:"Freestyle therapy, cheaper than the fees"},
-            {t:42,text:"Stop the tape right there, that’s the one"},
-            {t:49,text:"Untitled for now but the feeling’s already won"}
-          ]}]
-        };
-
-        /* ── State ───────────────────────────────────────────────── */
-        var DATA  = { starlight: null, freestyle: FREESTYLE };
+        /* ── State (real data only — lanes are filled by loadCatalogTrack /
+              loadUploadTrack; there is NO mock/demo fallback) ─────────── */
+        var DATA  = { starlight: null, freestyle: null };
         var TOTAL_SECONDS = 0;
         var state = { lane:"starlight", selected:null, token:0, playing:false,
                       cur:0, total:0, connected:false, timer:null, lastDecode:null };
@@ -285,10 +260,8 @@
         var playerSourceLabel= document.getElementById("playerSourceLabel");
         var hint         = document.getElementById("transcriptHint");
         var scrim        = document.getElementById("sheetScrim");
-        var lanePills    = Array.prototype.slice.call(document.querySelectorAll(".lane-switch [data-lane]"));
         var rhymesToggle = document.getElementById("rhymesToggle");
         var rhLegend     = document.getElementById("rhLegend");
-        var laneSwitch   = document.querySelector(".lane-switch");
         var transcriptPane = document.querySelector(".transcript-pane");
 
         /* ── Loading / error banners ─────────────────────────────── */
@@ -301,6 +274,18 @@
           head.innerHTML = '<div class="decode-error" style="padding:1.5rem"><span class="err-ico" aria-hidden="true">!</span><div><strong>'+esc(msg)+'</strong></div></div>';
           scroll.innerHTML = overview.innerHTML = "";
         }
+        /* Opened with no ?id and no ?upload — clean empty state, never mock. */
+        function showEmptyState() {
+          if(playerBar) playerBar.hidden=true;
+          head.innerHTML = "";
+          overview.innerHTML = "";
+          scroll.innerHTML =
+            '<div class="decode-empty" style="max-width:520px;margin:8vh auto 0;text-align:center;padding:2rem 1.25rem">'
+            + '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.02em">Nothing to decode yet</div>'
+            + '<p style="margin:.75rem 0 1.5rem;color:var(--ink-60);font-weight:600;line-height:1.5">Search a track or upload a freestyle and 16 Lab will break down the bars — rhyme, flow and lyricism.</p>'
+            + '<a class="btn-pill" href="./lab.html" style="display:inline-flex;align-items:center;padding:11px 20px;border:2px solid var(--border);border-radius:999px;background:var(--orange);color:var(--cream);font-weight:700;text-decoration:none;box-shadow:3px 4px 0 rgba(6,19,31,.85)">Go to the lab</a>'
+            + '</div>';
+        }
 
         /* ── Render: header ──────────────────────────────────────── */
         function renderHead() {
@@ -308,7 +293,7 @@
           var art = d.cover==="wave"
             ? '<span class="head-art head-art-wave" aria-hidden="true">'+[38,74,52,90,60,34,70].map(function(h){return'<span style="--h:'+h+'%"></span>';}).join("")+'</span>'
             : d.cover
-              ? '<span class="head-art"><img src="'+esc(d.cover)+'" alt="'+esc(d.title)+' artwork" /></span>'
+              ? '<span class="head-art"><img src="'+esc(d.cover)+'" alt="'+esc(d.title)+' artwork" onerror="this.parentNode.classList.add(\'cover-ph\');this.remove()" /></span>'
               : '<span class="head-art cover-ph" aria-hidden="true"></span>';
           var badge = (d.source==="scribe"||d.source==="upload")
             ? '<span class="head-badge head-badge--scribe"><span class="badge-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Transcribed · Scribe</span>'
@@ -644,7 +629,7 @@
             playerThumb.innerHTML=[38,72,52,88,60,34].map(function(h){return'<span style="--h:'+h+'%"></span>';}).join("");
           } else if(d.cover){
             playerThumb.className="player-thumb";
-            playerThumb.innerHTML='<img src="'+esc(d.cover)+'" alt="" />';
+            playerThumb.innerHTML='<img src="'+esc(d.cover)+'" alt="" onerror="this.parentNode.className=\'player-thumb cover-ph\';this.remove()" />';
           } else {
             playerThumb.className="player-thumb cover-ph"; playerThumb.innerHTML="";
           }
@@ -756,14 +741,6 @@
           renderMatchBanner(d);
           window.scrollTo(0,0);
         }
-        function setLane(lane) {
-          lanePills.forEach(function(p){p.classList.toggle("is-active",p.getAttribute("data-lane")===lane);});
-          state.lane=lane;
-          if(lane==="starlight"&&!DATA.starlight) loadCatalogTrack();
-          else renderLane();
-        }
-        lanePills.forEach(function(p){p.addEventListener("click",function(){setLane(p.getAttribute("data-lane"));});});
-
 /* ── Load catalog track from API ─────────────────── */
         function loadCatalogTrack() {
           if(!trackId){
@@ -821,7 +798,6 @@
                 audioUrl:"/api/upload/"+encodeURIComponent(jobId)+"/audio"
               };
               state.lane="freestyle";
-              lanePills.forEach(function(p){p.classList.toggle("is-active",p.getAttribute("data-lane")==="freestyle");});
               renderLane();
               setupUploadAudio(DATA.freestyle.audioUrl);
               _resetRecord();
@@ -1169,9 +1145,6 @@
           rhLegend.hidden=!_rhymesOn;
         });
 
-        /* ── Show lane switch only with no catalog track and no upload ── */
-        if(!trackId&&!uploadId) laneSwitch.hidden=false;
-
         /* ── Contextual back / breadcrumb ─────────────────────────── */
         function setNav(){
           var back=document.querySelector(".back-link");
@@ -1187,9 +1160,10 @@
         }
         setNav();
 
-        /* ── Init ────────────────────────────────────────────────── */
+        /* ── Init (real data only: ?upload, ?id, else empty state) ── */
         if(uploadId) loadUploadTrack(uploadId);
-        else setLane("starlight");
+        else if(trackId) loadCatalogTrack();
+        else showEmptyState();
       })();
     </script>
   </body>
