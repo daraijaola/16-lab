@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>16 Lab — Scores</title>
-    <meta name="description" content="The pen game, measured. Technical rap metrics — rhyme, vocabulary, flow — across UK artists." />
+    <meta name="description" content="The pen game, measured on two axes — Technical craft (deterministic) and Depth lyricism (AI) — for every track and freestyle decoded on 16 Lab." />
     <link rel="icon" type="image/svg+xml" href="./assets/16-lab-logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,30 +40,59 @@
           <div class="scores-title">
             <h1>Scores</h1>
             <p class="scores-sub">
-              Technical metrics &mdash; rhyme, vocabulary, flow.
-              <span>Not a verdict on who&rsquo;s a better artist.</span>
+              Two axes, ranked apart &mdash; <strong>Technical&middot;craft</strong> (deterministic) and <strong>Depth&middot;lyricism</strong> (AI).
+              <span>A plain-but-deep record and a flashy-but-shallow one trade places depending on the lens.</span>
             </p>
           </div>
           <div class="state-switch mode-switch" role="group" aria-label="View mode">
             <button type="button" class="state-pill is-active" data-mode="leaderboard">Leaderboard</button>
-            <button type="button" class="state-pill" data-mode="compare">Compare</button>
+            <button type="button" class="state-pill" id="compareModePill" data-mode="compare">Compare</button>
           </div>
         </div>
 
         <!-- MODE 1: Leaderboard -->
         <section class="leaderboard" id="leaderboard" aria-label="Leaderboard">
+          <!-- Controls: sort axis + filter -->
+          <div class="lb-controls">
+            <div class="lb-control">
+              <span class="lb-control-label">Rank by</span>
+              <div class="state-switch" id="sortGroup" role="group" aria-label="Sort by">
+                <button type="button" class="state-pill is-active" data-sort="technical">Technical</button>
+                <button type="button" class="state-pill" data-sort="depth">Depth</button>
+                <button type="button" class="state-pill" data-sort="recent">Recent</button>
+              </div>
+            </div>
+            <div class="lb-control">
+              <span class="lb-control-label">Show</span>
+              <div class="state-switch" id="filterGroup" role="group" aria-label="Filter">
+                <button type="button" class="state-pill is-active" data-filter="all">All</button>
+                <button type="button" class="state-pill" data-filter="catalog">Catalog</button>
+                <button type="button" class="state-pill" data-filter="freestyle">Freestyle</button>
+                <button type="button" class="state-pill" data-filter="mine">Mine</button>
+              </div>
+            </div>
+          </div>
+
           <div class="lb-head" aria-hidden="true">
             <span class="lbh-rank">#</span>
-            <span class="lbh-artist">Artist</span>
-            <span class="lbh-score">Pen score</span>
-            <span class="lbh-tracks">Decoded</span>
-            <span class="lbh-tag">Standout</span>
+            <span class="lbh-cover"></span>
+            <span class="lbh-track">Track</span>
+            <span class="lbh-axis">Technical</span>
+            <span class="lbh-axis">Depth</span>
+            <span class="lbh-tags">Source &middot; read</span>
           </div>
           <ol class="lb-list" id="lbList"></ol>
+
+          <!-- Empty / no-match states -->
+          <div class="lb-empty" id="lbEmpty" hidden>
+            <span class="lb-empty-mark" aria-hidden="true"></span>
+            <p id="lbEmptyMsg">No decodes yet &mdash; decode a track to put it on the board.</p>
+            <a class="btn-pill" id="lbEmptyCta" href="./lab.html">Decode a track</a>
+          </div>
         </section>
 
         <!-- MODE 2: Compare -->
-        <section class="compare" id="compare" aria-label="Compare two artists" hidden>
+        <section class="compare" id="compare" aria-label="Compare two tracks" hidden>
           <div class="cmp-grid">
             <!-- Slot A -->
             <div class="cmp-slot cmp-slot--a">
@@ -79,9 +108,15 @@
                   <span class="cmp-sub" id="subA"></span>
                 </div>
               </div>
-              <div class="cmp-bigscore">
-                <span class="cmp-big-num" id="bigA">87</span>
-                <span class="cmp-big-cap">Pen score</span>
+              <div class="cmp-bigscore cmp-bigscore--dual">
+                <div class="cmp-big">
+                  <span class="cmp-big-num" id="bigTechA">&mdash;</span>
+                  <span class="cmp-big-cap">Technical</span>
+                </div>
+                <div class="cmp-big cmp-big--depth">
+                  <span class="cmp-big-num cmp-big-num--depth" id="bigDepthA">&mdash;</span>
+                  <span class="cmp-big-cap">Depth</span>
+                </div>
               </div>
             </div>
 
@@ -101,14 +136,20 @@
                   <span class="cmp-sub" id="subB"></span>
                 </div>
               </div>
-              <div class="cmp-bigscore">
-                <span class="cmp-big-num" id="bigB">80</span>
-                <span class="cmp-big-cap">Pen score</span>
+              <div class="cmp-bigscore cmp-bigscore--dual">
+                <div class="cmp-big">
+                  <span class="cmp-big-num" id="bigTechB">&mdash;</span>
+                  <span class="cmp-big-cap">Technical</span>
+                </div>
+                <div class="cmp-big cmp-big--depth">
+                  <span class="cmp-big-num cmp-big-num--depth" id="bigDepthB">&mdash;</span>
+                  <span class="cmp-big-cap">Depth</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Paired metric bars -->
+          <!-- Paired metric bars (Technical + Depth groups) -->
           <div class="cmp-metrics" id="cmpMetrics"></div>
 
           <!-- Verdict -->
@@ -122,222 +163,356 @@
 
     <script>
       (function () {
-        /* ---------------- Metrics ---------------- */
-        var METRICS = [
-          { key: "rhyme", label: "Rhyme density" },
-          { key: "internal", label: "Internal rhymes" },
-          { key: "vocab", label: "Vocabulary richness" },
-          { key: "multi", label: "Multisyllabic rate" },
-          { key: "variance", label: "Syllable variance" },
-          { key: "reference", label: "Reference density" }
-        ];
+        "use strict";
 
-        /* ---------------- Artists (mock) ---------------- */
-        var ARTISTS = [
-          { id: "dave", name: "Dave", img: "./assets/artists/dave.png", tracks: 42,
-            m: { rhyme: 85, internal: 81, vocab: 96, multi: 84, variance: 82, reference: 94 } },
-          { id: "simz", name: "Little Simz", tracks: 29,
-            m: { rhyme: 84, internal: 83, vocab: 94, multi: 90, variance: 81, reference: 84 } },
-          { id: "ghetts", name: "Ghetts", tracks: 24,
-            m: { rhyme: 93, internal: 95, vocab: 85, multi: 84, variance: 78, reference: 75 } },
-          { id: "kojey", name: "Kojey Radical", tracks: 18,
-            m: { rhyme: 80, internal: 78, vocab: 90, multi: 76, variance: 85, reference: 89 } },
-          { id: "stormzy", name: "Stormzy", img: "./assets/artists/stormzy.png", tracks: 35,
-            m: { rhyme: 81, internal: 76, vocab: 80, multi: 78, variance: 90, reference: 81 } },
-          { id: "cench", name: "Central Cee", img: "./assets/artists/central-cee.png", tracks: 38,
-            m: { rhyme: 85, internal: 79, vocab: 75, multi: 87, variance: 73, reference: 81 } },
-          { id: "headie", name: "Headie One", tracks: 23,
-            m: { rhyme: 80, internal: 82, vocab: 77, multi: 81, variance: 77, reference: 77 } },
-          { id: "jhus", name: "J Hus", tracks: 21,
-            m: { rhyme: 77, internal: 73, vocab: 79, multi: 76, variance: 84, reference: 79 } }
-        ];
+        /* ============================================================
+           Scores — real, dual-axis board fed by /api/scoreboard.
+           Every track/freestyle a user decodes becomes an entry with
+           Technical (deterministic, always present) and Depth (AI,
+           nullable). No mock fallback; no lyric content anywhere.
+           ============================================================ */
 
-        function avg(a) {
-          var s = 0;
-          METRICS.forEach(function (mt) { s += a.m[mt.key]; });
-          return s / METRICS.length;
+        function esc(t) {
+          return String(t == null ? "" : t)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
         }
-        ARTISTS.forEach(function (a) {
-          a.scoreRaw = avg(a);
-          a.score = Math.round(a.scoreRaw);
-        });
+        function num(v) { return typeof v === "number" && isFinite(v) ? v : null; }
 
-        // leader per metric (for #1 detection)
-        var leaderOf = {};
-        METRICS.forEach(function (mt) {
-          var best = null;
-          ARTISTS.forEach(function (a) {
-            if (!best || a.m[mt.key] > best.m[mt.key]) best = a;
-          });
-          leaderOf[mt.key] = best.id;
-        });
-
-        function standout(a) {
-          // a #1 metric if held, else personal-best metric
-          var ownLed = METRICS.filter(function (mt) { return leaderOf[mt.key] === a.id; });
-          if (ownLed.length) {
-            // pick the one with the highest value
-            ownLed.sort(function (x, y) { return a.m[y.key] - a.m[x.key]; });
-            return { text: "Top " + ownLed[0].label.toLowerCase(), top: true };
-          }
-          var best = METRICS.slice().sort(function (x, y) { return a.m[y.key] - a.m[x.key]; })[0];
-          return { text: "Strong " + best.label.toLowerCase(), top: false };
-        }
-
-        function monogram(name) {
-          var parts = name.split(" ");
+        /* Initials placeholder when a cover is null (share-card pattern). */
+        function initials(s) {
+          var parts = String(s || "").trim().split(/\s+/).filter(Boolean);
+          if (!parts.length) return "?";
           var i = parts[0][0] + (parts[1] ? parts[1][0] : "");
           return i.toUpperCase();
         }
-
-        function avatarHTML(a, cls) {
-          if (a.img) {
-            return '<span class="' + cls + '"><img src="' + a.img + '" alt="" /></span>';
+        function coverHTML(e, cls) {
+          if (e.coverUrl) {
+            return '<span class="' + cls + '"><img src="' + esc(e.coverUrl) + '" alt="" /></span>';
           }
-          return '<span class="' + cls + ' is-mono" data-mono="' + a.id + '">' + monogram(a.name) + "</span>";
+          var seed = e.title || e.artist || e.id;
+          return '<span class="' + cls + ' is-mono">' + esc(initials(seed)) + "</span>";
+        }
+        function displayTitle(e) {
+          if (e.title) return e.title;
+          return e.source === "freestyle" ? "Untitled freestyle" : "Untitled";
+        }
+        function displayArtist(e) {
+          if (e.artist) return e.artist;
+          return e.source === "freestyle" ? "You" : "Unknown artist";
+        }
+        function rowHref(e) {
+          if (e.source === "freestyle") {
+            var jobId = String(e.id).replace(/^upload-/, "");
+            return "./decode.html?upload=" + encodeURIComponent(jobId);
+          }
+          return "./decode.html?id=" + encodeURIComponent(e.id);
+        }
+
+        /* Insight from the gap between the two axes (only when both exist). */
+        function insight(e) {
+          var t = num(e.technical), d = num(e.depth);
+          if (t == null || d == null) return null;
+          if (d - t >= 12) return { text: "Substance-led", cls: "is-substance" };
+          if (t - d >= 12) return { text: "Craft-led", cls: "is-craft" };
+          return { text: "Balanced", cls: "is-balanced" };
+        }
+
+        function api(qs) {
+          return fetch("/api/scoreboard" + (qs || ""), { credentials: "same-origin" })
+            .then(function (r) { if (!r.ok) throw r.status; return r.json(); });
         }
 
         /* ---------------- Leaderboard ---------------- */
         var lbList = document.getElementById("lbList");
+        var lbHead = document.querySelector(".lb-head");
+        var lbEmpty = document.getElementById("lbEmpty");
+        var lbEmptyMsg = document.getElementById("lbEmptyMsg");
+        var lbEmptyCta = document.getElementById("lbEmptyCta");
+        var sortGroup = document.getElementById("sortGroup");
+        var filterGroup = document.getElementById("filterGroup");
+        var compareModePill = document.getElementById("compareModePill");
 
-        function renderLeaderboard() {
-          var ranked = ARTISTS.slice().sort(function (x, y) { return y.scoreRaw - x.scoreRaw; });
-          lbList.innerHTML = ranked.map(function (a, i) {
-            var rank = i + 1;
-            var so = standout(a);
-            return (
-              '<li class="lb-row' + (rank <= 3 ? " is-top is-top-" + rank : "") + '" tabindex="0">' +
-                '<span class="lb-rank">' + (rank <= 3 ? '<span class="lb-medal">' + rank + "</span>" : rank) + "</span>" +
-                avatarHTML(a, "lb-avatar") +
-                '<span class="lb-name">' + a.name + "</span>" +
-                '<span class="lb-score-chip">' + a.score + "</span>" +
-                '<span class="lb-tracks"><strong>' + a.tracks + "</strong> tracks</span>" +
-                '<span class="lb-tag' + (so.top ? " is-top-tag" : "") + '">' + so.text + "</span>" +
-              "</li>"
-            );
+        var state = { sort: "technical", filter: "all" };
+        var ALL = [];          // full board (filter=all) — drives compare + counts
+        var boardCount = 0;    // total entries on the board
+
+        function chip(label, value, axis, active) {
+          var has = value != null;
+          var cls = "lb-chip lb-chip--" + axis + (active ? " is-on" : " is-dim") + (has ? "" : " is-null");
+          return (
+            '<span class="' + cls + '">' +
+              '<span class="lb-chip-num">' + (has ? value : "&mdash;") + "</span>" +
+              '<span class="lb-chip-cap">' + label + "</span>" +
+            "</span>"
+          );
+        }
+
+        function rowHTML(e, rank, sort) {
+          var t = num(e.technical), d = num(e.depth);
+          var techActive = sort === "technical";
+          var depthActive = sort === "depth";
+          // "Recent" keeps both lit so neither axis looks demoted.
+          if (sort === "recent") { techActive = true; depthActive = true; }
+
+          var ins = insight(e);
+          var src = e.source === "freestyle" ? "Freestyle" : "Catalog";
+          var tags =
+            '<span class="lb-src lb-src--' + (e.source === "freestyle" ? "freestyle" : "catalog") + '">' + src + "</span>" +
+            (ins ? '<span class="lb-insight ' + ins.cls + '">' + ins.text + "</span>" : "");
+
+          var topCls = rank <= 3 ? " is-top is-top-" + rank : "";
+          return (
+            '<li class="lb-row' + topCls + '" tabindex="0" role="link" ' +
+                'data-href="' + esc(rowHref(e)) + '" aria-label="' + esc(displayTitle(e) + " by " + displayArtist(e)) + '">' +
+              '<span class="lb-rank">' + (rank <= 3 ? '<span class="lb-medal">' + rank + "</span>" : rank) + "</span>" +
+              coverHTML(e, "lb-avatar") +
+              '<span class="lb-meta">' +
+                '<span class="lb-name">' + esc(displayTitle(e)) + "</span>" +
+                '<span class="lb-artist">' + esc(displayArtist(e)) + "</span>" +
+              "</span>" +
+              chip("Technical", t, "tech", techActive) +
+              chip("Depth", d, "depth", depthActive) +
+              '<span class="lb-tags">' + tags + "</span>" +
+            "</li>"
+          );
+        }
+
+        function renderLeaderboard(entries) {
+          lbList.innerHTML = entries.map(function (e, i) {
+            return rowHTML(e, i + 1, state.sort);
           }).join("");
         }
 
-        /* ---------------- Compare (by song) ---------------- */
-        var SONGS = [
-          { id: "starlight", title: "Starlight", artist: "Dave", cover: "./assets/tracks/starlight-cover.jpg",
-            m: { rhyme: 84, internal: 80, vocab: 94, multi: 82, variance: 80, reference: 92 } },
-          { id: "sprinter", title: "Sprinter", artist: "Dave & Central Cee", ph: "orange",
-            m: { rhyme: 88, internal: 82, vocab: 74, multi: 90, variance: 76, reference: 70 } },
-          { id: "black", title: "Black", artist: "Dave", ph: "ink",
-            m: { rhyme: 86, internal: 83, vocab: 95, multi: 81, variance: 84, reference: 96 } },
-          { id: "clash", title: "Clash", artist: "Dave & Stormzy", ph: "blue",
-            m: { rhyme: 90, internal: 92, vocab: 82, multi: 85, variance: 79, reference: 76 } },
-          { id: "location", title: "Location", artist: "Dave \u00b7 feat. Burna Boy", ph: "blue",
-            m: { rhyme: 80, internal: 77, vocab: 90, multi: 79, variance: 82, reference: 88 } },
-          { id: "vossibop", title: "Vossi Bop", artist: "Stormzy", ph: "orange",
-            m: { rhyme: 81, internal: 76, vocab: 80, multi: 78, variance: 90, reference: 80 } },
-          { id: "inthefire", title: "In The Fire", artist: "Dave", ph: "ink",
-            m: { rhyme: 79, internal: 80, vocab: 85, multi: 77, variance: 78, reference: 83 } },
-          { id: "freestyle03", title: "Freestyle take 03", artist: "Uploaded \u00b7 1:42", wave: [36, 72, 48, 88, 56],
-            m: { rhyme: 75, internal: 72, vocab: 78, multi: 82, variance: 70, reference: 68 } }
-        ];
-        SONGS.forEach(function (s) { s.score = Math.round(avg(s)); });
+        function showEmpty(msg, cta) {
+          lbEmpty.hidden = false;
+          lbEmptyMsg.innerHTML = msg;
+          lbEmptyCta.hidden = !cta;
+          lbHead.style.display = "none";
+          lbList.hidden = true;
+        }
+        function hideEmpty() {
+          lbEmpty.hidden = true;
+          lbHead.style.display = "";
+          lbList.hidden = false;
+        }
 
+        function loadLeaderboard() {
+          var qs = "?sort=" + state.sort + "&filter=" + state.filter + "&limit=200";
+          return api(qs).then(function (entries) {
+            if (!entries.length) {
+              if (boardCount === 0) {
+                showEmpty("No decodes yet &mdash; decode a track to put it on the board.", true);
+              } else if (state.filter === "mine") {
+                showEmpty("Nothing here yet under <strong>Mine</strong> &mdash; decode a track and it shows up on this device.", true);
+              } else {
+                showEmpty("No <strong>" + esc(state.filter) + "</strong> entries on the board yet.", false);
+              }
+              return;
+            }
+            hideEmpty();
+            renderLeaderboard(entries);
+          }).catch(function () {
+            showEmpty("Couldn&rsquo;t load the board &mdash; try again in a moment.", false);
+          });
+        }
+
+        sortGroup.addEventListener("click", function (ev) {
+          var btn = ev.target.closest("[data-sort]");
+          if (!btn) return;
+          state.sort = btn.getAttribute("data-sort");
+          setActive(sortGroup, btn);
+          loadLeaderboard();
+        });
+        filterGroup.addEventListener("click", function (ev) {
+          var btn = ev.target.closest("[data-filter]");
+          if (!btn) return;
+          state.filter = btn.getAttribute("data-filter");
+          setActive(filterGroup, btn);
+          loadLeaderboard();
+        });
+        function setActive(group, btn) {
+          group.querySelectorAll(".state-pill").forEach(function (p) {
+            p.classList.toggle("is-active", p === btn);
+          });
+        }
+
+        // Row navigation (click + keyboard).
+        lbList.addEventListener("click", function (ev) {
+          var row = ev.target.closest(".lb-row");
+          if (row) window.location.href = row.getAttribute("data-href");
+        });
+        lbList.addEventListener("keydown", function (ev) {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          var row = ev.target.closest(".lb-row");
+          if (row) { ev.preventDefault(); window.location.href = row.getAttribute("data-href"); }
+        });
+
+        /* ---------------- Compare (dual axis, song vs song) ---------------- */
         var selectA = document.getElementById("selectA");
         var selectB = document.getElementById("selectB");
         var avatarA = document.getElementById("avatarA");
         var avatarB = document.getElementById("avatarB");
         var subA = document.getElementById("subA");
         var subB = document.getElementById("subB");
-        var bigA = document.getElementById("bigA");
-        var bigB = document.getElementById("bigB");
+        var bigTechA = document.getElementById("bigTechA");
+        var bigTechB = document.getElementById("bigTechB");
+        var bigDepthA = document.getElementById("bigDepthA");
+        var bigDepthB = document.getElementById("bigDepthB");
         var cmpMetrics = document.getElementById("cmpMetrics");
         var verdictEl = document.getElementById("verdict");
+        var compareReady = false;
 
-        function songById(id) {
-          for (var i = 0; i < SONGS.length; i++) if (SONGS[i].id === id) return SONGS[i];
-          return SONGS[0];
+        function entryById(id) {
+          for (var i = 0; i < ALL.length; i++) if (ALL[i].id === id) return ALL[i];
+          return null;
         }
 
         function fillSelects() {
-          var opts = SONGS.map(function (s) {
-            return '<option value="' + s.id + '">' + s.title + " \u2014 " + s.artist + "</option>";
+          var opts = ALL.map(function (e) {
+            var tag = e.source === "freestyle" ? " · Freestyle" : "";
+            return '<option value="' + esc(e.id) + '">' +
+              esc(displayTitle(e) + " — " + displayArtist(e) + tag) + "</option>";
           }).join("");
           selectA.innerHTML = opts;
           selectB.innerHTML = opts;
-          selectA.value = "starlight";
-          selectB.value = "sprinter";
-        }
-
-        function setAvatar(el, s, side) {
-          var base = "cmp-avatar cmp-avatar--" + side;
-          if (s.cover) {
-            el.className = base;
-            el.innerHTML = '<img src="' + s.cover + '" alt="" />';
-          } else if (s.wave) {
-            el.className = base + " cmp-avatar--wave";
-            el.innerHTML = s.wave.map(function (h) { return '<span style="--h:' + h + '%"></span>'; }).join("");
-          } else {
-            var phClass = s.ph === "blue" ? " cover-ph--blue" : s.ph === "orange" ? " cover-ph--orange" : "";
-            el.className = base + " cover-ph" + phClass;
-            el.innerHTML = "";
+          if (ALL.length >= 2) {
+            selectA.value = ALL[0].id;
+            selectB.value = ALL[1].id;
           }
         }
 
-        function buildVerdict(a, b) {
-          var aLead = null, bLead = null, aGap = -1, bGap = -1;
-          METRICS.forEach(function (mt) {
-            var d = a.m[mt.key] - b.m[mt.key];
-            if (d > aGap) { aGap = d; aLead = mt; }
-            if (-d > bGap) { bGap = -d; bLead = mt; }
+        // Prevent A == B by disabling the chosen option in the opposite select.
+        function syncOptionLocks() {
+          [[selectA, selectB], [selectB, selectA]].forEach(function (pair) {
+            var other = pair[1].value;
+            Array.prototype.forEach.call(pair[0].options, function (o) {
+              o.disabled = (o.value === other);
+            });
           });
-          if (aGap <= 0) {
-            return "<strong>" + esc(b.title) + "</strong> leads across every tracked metric \u2014 widest on " +
-              bLead.label.toLowerCase() + ".";
-          }
-          if (bGap <= 0) {
-            return "<strong>" + esc(a.title) + "</strong> leads across every tracked metric \u2014 widest on " +
-              aLead.label.toLowerCase() + ".";
-          }
-          return "<strong>" + esc(a.title) + "</strong> leads on " + aLead.label.toLowerCase() +
-            "; <strong>" + esc(b.title) + "</strong> leads on " + bLead.label.toLowerCase() + ".";
         }
 
-        function esc(t) {
-          return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        function setAvatar(el, e, side) {
+          var base = "cmp-avatar cmp-avatar--" + side;
+          if (e.coverUrl) {
+            el.className = base;
+            el.innerHTML = '<img src="' + esc(e.coverUrl) + '" alt="" />';
+          } else {
+            el.className = base + " is-mono";
+            el.innerHTML = esc(initials(e.title || e.artist || e.id));
+          }
         }
 
-        function renderCompare() {
-          var a = songById(selectA.value);
-          var b = songById(selectB.value);
-          if (a.id === b.id) {
-            var alt = SONGS.filter(function (x) { return x.id !== a.id; })[0];
-            selectB.value = alt.id;
-            b = alt;
-          }
+        function setBig(el, v) {
+          el.innerHTML = v == null ? "&mdash;" : v;
+          el.classList.toggle("is-null", v == null);
+        }
 
-          setAvatar(avatarA, a, "a");
-          setAvatar(avatarB, b, "b");
-          subA.textContent = a.artist;
-          subB.textContent = b.artist;
-          bigA.textContent = a.score;
-          bigB.textContent = b.score;
+        // Pair two metric lists by key (fallback to index); preserve A's order,
+        // then append any keys only B has.
+        function pairMetrics(listA, listB) {
+          listA = listA || []; listB = listB || [];
+          var bByKey = {};
+          listB.forEach(function (m, i) { bByKey[m.key || ("idx" + i)] = m; });
+          var seen = {}, rows = [];
+          listA.forEach(function (m, i) {
+            var k = m.key || ("idx" + i);
+            seen[k] = true;
+            var b = bByKey[k];
+            rows.push({ label: m.label || m.key || ("Metric " + (i + 1)), a: num(m.value), b: b ? num(b.value) : null });
+          });
+          listB.forEach(function (m, i) {
+            var k = m.key || ("idx" + i);
+            if (seen[k]) return;
+            rows.push({ label: m.label || m.key || ("Metric " + (i + 1)), a: null, b: num(m.value) });
+          });
+          return rows;
+        }
 
-          cmpMetrics.innerHTML = METRICS.map(function (mt) {
-            var va = a.m[mt.key], vb = b.m[mt.key];
-            var aWin = va > vb, bWin = vb > va;
+        function barGroup(title, sub, rows) {
+          if (!rows.length) return "";
+          var body = rows.map(function (r) {
+            var aWin = r.a != null && r.b != null && r.a > r.b;
+            var bWin = r.a != null && r.b != null && r.b > r.a;
+            function side(val, who, win) {
+              return (
+                '<div class="cmp-bar-row cmp-bar-row--' + who + '">' +
+                  '<span class="cmp-val' + (win ? " is-win" : "") + '">' + (val == null ? "&mdash;" : val) + "</span>" +
+                  '<span class="cmp-track"><span class="cmp-fill cmp-fill--' + who + '" style="width:' + (val == null ? 0 : val) + '%"></span></span>' +
+                "</div>"
+              );
+            }
             return (
               '<div class="cmp-metric">' +
-                '<div class="cmp-metric-label">' + mt.label + "</div>" +
-                '<div class="cmp-bars">' +
-                  '<div class="cmp-bar-row cmp-bar-row--a">' +
-                    '<span class="cmp-val' + (aWin ? " is-win" : "") + '">' + va + "</span>" +
-                    '<span class="cmp-track"><span class="cmp-fill cmp-fill--a" style="width:' + va + '%"></span></span>' +
-                  "</div>" +
-                  '<div class="cmp-bar-row cmp-bar-row--b">' +
-                    '<span class="cmp-val' + (bWin ? " is-win" : "") + '">' + vb + "</span>" +
-                    '<span class="cmp-track"><span class="cmp-fill cmp-fill--b" style="width:' + vb + '%"></span></span>' +
-                  "</div>" +
-                "</div>" +
+                '<div class="cmp-metric-label">' + esc(r.label) + "</div>" +
+                '<div class="cmp-bars">' + side(r.a, "a", aWin) + side(r.b, "b", bWin) + "</div>" +
               "</div>"
             );
           }).join("");
+          return (
+            '<div class="cmp-mgroup">' +
+              '<div class="cmp-mgroup-head"><strong>' + esc(title) + "</strong><span>" + esc(sub) + "</span></div>" +
+              body +
+            "</div>"
+          );
+        }
+
+        function buildVerdict(a, b) {
+          var ta = num(a.technical), tb = num(b.technical);
+          var da = num(a.depth), db = num(b.depth);
+          var an = "<strong>" + esc(displayTitle(a)) + "</strong>";
+          var bn = "<strong>" + esc(displayTitle(b)) + "</strong>";
+
+          // Craft (always available).
+          var craft;
+          if (ta === tb) craft = { txt: "Craft is dead level (" + ta + " each)", winner: null };
+          else if (ta > tb) craft = { txt: an + " wins on craft (+" + (ta - tb) + ")", winner: "a" };
+          else craft = { txt: bn + " wins on craft (+" + (tb - ta) + ")", winner: "b" };
+
+          // Lyricism (needs both depths).
+          var lyric;
+          if (da == null || db == null) lyric = { txt: "lyricism can&rsquo;t be compared (Depth missing)", winner: "na" };
+          else if (da === db) lyric = { txt: "lyricism is level (" + da + " each)", winner: null };
+          else if (da > db) lyric = { txt: an + " wins on lyricism (+" + (da - db) + ")", winner: "a" };
+          else lyric = { txt: bn + " wins on lyricism (+" + (db - da) + ")", winner: "b" };
+
+          // One track sweeping both axes gets a combined sentence.
+          if (craft.winner && craft.winner === lyric.winner) {
+            var who = craft.winner === "a" ? an : bn;
+            var t = Math.abs(ta - tb), l = Math.abs(da - db);
+            return who + " takes both axes &mdash; craft (+" + t + ") and lyricism (+" + l + ").";
+          }
+          return craft.txt + ", " + lyric.txt + ".";
+        }
+
+        function renderCompare() {
+          if (!compareReady) return;
+          var a = entryById(selectA.value);
+          var b = entryById(selectB.value);
+          if (!a || !b) return;
+          if (a.id === b.id) {
+            verdictEl.innerHTML = "Pick two different tracks to compare.";
+            return;
+          }
+          syncOptionLocks();
+
+          setAvatar(avatarA, a, "a");
+          setAvatar(avatarB, b, "b");
+          subA.textContent = displayArtist(a) + (a.source === "freestyle" ? " · Freestyle" : "");
+          subB.textContent = displayArtist(b) + (b.source === "freestyle" ? " · Freestyle" : "");
+          setBig(bigTechA, num(a.technical));
+          setBig(bigTechB, num(b.technical));
+          setBig(bigDepthA, num(a.depth));
+          setBig(bigDepthB, num(b.depth));
+
+          var tech = pairMetrics(a.metrics, b.metrics);
+          var depth = pairMetrics(a.depthSub, b.depthSub);
+          var html = barGroup("Technical", "craft · deterministic", tech) +
+                     barGroup("Depth", "lyricism · AI", depth);
+          if (!html) {
+            html = '<p class="cmp-nometrics">Per-metric breakdown isn&rsquo;t available for these entries.</p>';
+          }
+          cmpMetrics.innerHTML = html;
 
           verdictEl.innerHTML = buildVerdict(a, b);
         }
@@ -345,12 +520,24 @@
         selectA.addEventListener("change", renderCompare);
         selectB.addEventListener("change", renderCompare);
 
+        function setupCompare() {
+          var enough = ALL.length >= 2;
+          compareModePill.disabled = !enough;
+          compareModePill.title = enough ? "" : "Decode at least two tracks to compare";
+          compareReady = enough;
+          if (!enough) return;
+          fillSelects();
+          syncOptionLocks();
+          renderCompare();
+        }
+
         /* ---------------- Mode switch ---------------- */
         var modePills = Array.prototype.slice.call(document.querySelectorAll(".mode-switch [data-mode]"));
         var lb = document.getElementById("leaderboard");
         var cmp = document.getElementById("compare");
 
         function setMode(mode) {
+          if (mode === "compare" && !compareReady) return;
           modePills.forEach(function (p) {
             p.classList.toggle("is-active", p.getAttribute("data-mode") === mode);
           });
@@ -358,14 +545,25 @@
           cmp.hidden = mode !== "compare";
         }
         modePills.forEach(function (p) {
-          p.addEventListener("click", function () { setMode(p.getAttribute("data-mode")); });
+          p.addEventListener("click", function () {
+            if (p.disabled) return;
+            setMode(p.getAttribute("data-mode"));
+          });
         });
 
-        // init
-        renderLeaderboard();
-        fillSelects();
-        renderCompare();
-        setMode("leaderboard");
+        /* ---------------- Init ---------------- */
+        // Fetch the full board once (drives compare + total count + empty
+        // detection), then render the leaderboard with current sort/filter.
+        api("?sort=recent&filter=all&limit=200").then(function (all) {
+          ALL = all;
+          boardCount = all.length;
+          setupCompare();
+          return loadLeaderboard();
+        }).catch(function () {
+          boardCount = 0;
+          setupCompare();
+          loadLeaderboard();
+        });
       })();
     </script>
   </body>

@@ -792,6 +792,7 @@
               };
               renderLane();
               checkSpotifyOnLoad();
+              _resetRecord();
               fetchLiveScore(); /* POST displayed lines → real score + rhyme spans */
               fetchDepth();     /* parallel: AI lyricism score (cached for consistency) */
             })
@@ -823,11 +824,13 @@
               lanePills.forEach(function(p){p.classList.toggle("is-active",p.getAttribute("data-lane")==="freestyle");});
               renderLane();
               setupUploadAudio(DATA.freestyle.audioUrl);
+              _resetRecord();
               fetchLiveScore(); /* rhymes + Technical score from /api/score */
               fetchDepth();     /* AI Depth score (cached) */
             })
             .catch(function(st){
               if(st===409){ setTimeout(function(){loadUploadTrack(jobId);},1500); return; } /* not ready yet */
+              if(st===404){ showError("This freestyle session expired — its scores are still on the board, but re-upload the audio to decode it again."); return; }
               showError("Couldn't load your freestyle — it may have failed. Try uploading again.");
             });
         }
@@ -850,6 +853,13 @@
           _uploadAudio.addEventListener("play",function(){ state.playing=true; paintPlayBtn(true); });
           _uploadAudio.addEventListener("pause",function(){ state.playing=false; paintPlayBtn(false); });
           _uploadAudio.addEventListener("ended",function(){ state.playing=false; paintPlayBtn(false); });
+          _uploadAudio.addEventListener("error",function(){
+            /* Audio file swept (sessions are cleaned after a day) — degrade
+               gracefully: keep the transcript/scores, just can't play. */
+            state.playing=false; paintPlayBtn(false);
+            playerNote.textContent="Freestyle audio expired — re-upload to play. Transcript & scores are saved.";
+            playerNote.hidden=false;
+          });
         }
 
         /* Match / no-match ribbon for the uploaded freestyle */
@@ -1082,6 +1092,7 @@
               rhymesToggle.hidden=false;
               rhLegend.hidden=false;
             }
+            if(_recState) _recState.tech=true; _maybeRecord();
           })
           .catch(function(){});
         }
@@ -1110,8 +1121,44 @@
             d.depthSub=res.sub||[];
             d.depthRationale=res.rationale||"";
             renderHead(); renderOverview();
+            if(_recState) _recState.depth=true; _maybeRecord();
           })
-          .catch(function(){ d.depthPending=false; renderHead(); renderOverview(); });
+          .catch(function(){
+            d.depthPending=false; renderHead(); renderOverview();
+            if(_recState) _recState.depth=true; _maybeRecord(); /* record with depth:null */
+          });
+        }
+
+        /* ── Scoreboard recording ────────────────────────────────────
+           After BOTH /api/score and /api/depth settle for a live track or
+           freestyle, post the consolidated entry (fire-and-forget; never blocks
+           the decode UI). Technical is required; depth may be null. NO lyrics. */
+        var _recState=null;
+        function _resetRecord(){ _recState={tech:false,depth:false,sent:false}; }
+        function _maybeRecord(){
+          if(!_recState||_recState.sent||!_recState.tech||!_recState.depth) return;
+          var d=DATA[state.lane];
+          if(!d||(d.source!=="musixmatch"&&d.source!=="upload")) return;
+          _recState.sent=true;
+          recordScoreboard(d);
+        }
+        function recordScoreboard(d){
+          var isUpload=d.source==="upload";
+          var id=isUpload?("upload-"+(d.id||uploadId)):(d.id||trackId);
+          if(!id) return;
+          function strip(arr){ return (arr||[]).map(function(m){return {key:m.key,label:m.label,value:m.value};}); }
+          var payload={
+            id:id, source:isUpload?"freestyle":"catalog",
+            title:d.title, artist:d.artist,
+            coverUrl:(d.cover&&d.cover!=="wave")?d.cover:null,
+            spotifyId:d.spotifyId||null,
+            technical:d.score,
+            metrics:strip(d.metrics),
+            depth:(typeof d.depthScore==="number"?d.depthScore:null),
+            depthSub:(d.depthSub&&d.depthSub.length?strip(d.depthSub):null),
+            depthRationale:d.depthRationale||null
+          };
+          fetch("/api/scoreboard",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).catch(function(){});
         }
 
         /* ── Rhymes toggle ───────────────────────────────────────── */
