@@ -310,13 +310,16 @@
             : d.cover
               ? '<span class="head-art"><img src="'+esc(d.cover)+'" alt="'+esc(d.title)+' artwork" /></span>'
               : '<span class="head-art cover-ph" aria-hidden="true"></span>';
-          var badge = (d.source==="scribe")
+          var badge = (d.source==="scribe"||d.source==="upload")
             ? '<span class="head-badge head-badge--scribe"><span class="badge-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Transcribed · Scribe</span>'
             : '<span class="head-badge"><img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />Lyrics · Musixmatch</span>';
+          var titleHtml = (d.source==="upload")
+            ? '<h1 class="editable-title" id="freestyleTitle"><span class="title-text">'+esc(d.title)+'</span><button class="title-edit-btn" type="button" aria-label="Rename freestyle" title="Rename">✎</button></h1>'
+            : '<h1>'+esc(d.title)+'</h1>';
           head.innerHTML =
             art+
             '<div class="head-meta">'+
-              '<div class="head-titles"><h1>'+esc(d.title)+'</h1><p class="head-artist">'+esc(d.artist)+'</p></div>'+
+              '<div class="head-titles">'+titleHtml+'<p class="head-artist">'+esc(d.artist)+'</p></div>'+
               '<div class="head-facts"><span>'+d.duration+'</span>'+badge+'</div>'+
             '</div>'+
             '<div class="head-aside">'+
@@ -329,6 +332,36 @@
               '</div>'+
               '<button class="share-btn" type="button"><span class="share-ico" aria-hidden="true"></span>Share card</button>'+
             '</div>';
+          if(d.source==="upload"){
+            var eb=head.querySelector(".title-edit-btn");
+            var tt=head.querySelector("#freestyleTitle .title-text");
+            if(eb) eb.addEventListener("click",function(e){ e.stopPropagation(); startTitleEdit(); });
+            if(tt) tt.addEventListener("click",startTitleEdit);
+          }
+        }
+
+        /* Inline-rename the uploaded freestyle (persists per job in localStorage) */
+        function startTitleEdit(){
+          var d=DATA[state.lane]; if(!d||d.source!=="upload") return;
+          var h1=document.getElementById("freestyleTitle"); if(!h1) return;
+          var input=document.createElement("input");
+          input.type="text"; input.className="title-edit-input"; input.value=d.title; input.maxLength=80;
+          h1.replaceWith(input); input.focus(); input.select();
+          var done=false;
+          function commit(save){
+            if(done) return; done=true;
+            if(save){
+              var v=(input.value||"").trim();
+              d.title=v||"Untitled freestyle";
+              try{ localStorage.setItem("16lab_name_"+(d.id||uploadId), d.title); }catch(e){}
+            }
+            renderHead(); renderDock();
+          }
+          input.addEventListener("blur",function(){ commit(true); });
+          input.addEventListener("keydown",function(e){
+            if(e.key==="Enter"){ e.preventDefault(); commit(true); }
+            else if(e.key==="Escape"){ e.preventDefault(); commit(false); }
+          });
         }
 
         /* Header Depth dial: real number, a shimmer while computing, or nothing
@@ -619,7 +652,9 @@
           playerTotalEl.textContent=d.duration||"0:00";
           playerSource.classList.toggle("is-local",!isSpotify);
           playerSourceLabel.textContent=isSpotify?"via Spotify":"Synced transcript";
-          var showConnect=isSpotify&&!state.connected;
+          /* Remember connect across reloads in this browser so we don't keep
+             flashing the "Connect Spotify" prompt at an already-connected user. */
+          var showConnect=isSpotify&&!(state.connected||_spRemembered());
           spotifyConnect.hidden=!showConnect; playerBar.hidden=showConnect;
           playerNote.hidden=true;
           document.body.classList.add("has-dock");
@@ -646,8 +681,11 @@
           }
         }
         /* Spotify connect → OAuth */
+        function _spRemembered(){ try{ return localStorage.getItem("16lab_sp_on")==="1"; }catch(e){ return false; } }
         spotifyConnect.addEventListener("click",function(){
           if(trackId) document.cookie="16lab_track="+encodeURIComponent(trackId)+";path=/;max-age=600;SameSite=Lax;Secure";
+          /* Mark that auto-play should fire once we return from OAuth (not on every load) */
+          try{ sessionStorage.setItem("16lab_sp_just","1"); }catch(e){}
           window.location.href="/api/spotify/login";
         });
 
@@ -772,8 +810,9 @@
                   return {id:"L"+(lineIdx++),text:ln.text,t:ln.t};
                 })};
               });
+              var savedName=null; try{ savedName=localStorage.getItem("16lab_name_"+res.id); }catch(e){}
               DATA.freestyle={
-                id:res.id, title:res.title, artist:res.artist,
+                id:res.id, title:savedName||"Untitled freestyle", artist:res.artist||"You",
                 duration:res.durationSec?fmt(res.durationSec):"0:00",
                 score:0, cover:"wave", audio:true, source:"upload", synced:true,
                 spotifyId:null, metrics:[], sections:sections,
@@ -838,16 +877,23 @@
           fetch("/api/spotify/now")
             .then(function(r){return r.ok?r.json():Promise.reject();})
             .then(function(sp){
-              if(!sp.connected) return;
+              if(!sp.connected){
+                /* Session expired — clear the remembered flag and show Connect again */
+                try{ localStorage.removeItem("16lab_sp_on"); }catch(e){}
+                state.connected=false; renderDock(); return;
+              }
               state.connected=true;
+              try{ localStorage.setItem("16lab_sp_on","1"); }catch(e){}
+              var justConnected=false; try{ justConnected=sessionStorage.getItem("16lab_sp_just")==="1"; }catch(e){}
               /* Sync play state BEFORE renderDock so the button renders correctly */
               if(sp.isPlaying&&sp.trackId===d.spotifyId){
                 /* Already on this track — sync position */
                 state.playing=true;
                 _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
                 if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
-              } else if(d.spotifyId){
-                /* Auto-play — retry once after 1.5s if device not ready yet */
+              } else if(justConnected&&d.spotifyId){
+                /* Auto-play ONLY right after the OAuth round-trip, not on every reload */
+                try{ sessionStorage.removeItem("16lab_sp_just"); }catch(e){}
                 _tryAutoPlay(d.spotifyId, 0);
               }
               renderDock();
@@ -1078,6 +1124,21 @@
 
         /* ── Show lane switch only with no catalog track and no upload ── */
         if(!trackId&&!uploadId) laneSwitch.hidden=false;
+
+        /* ── Contextual back / breadcrumb ─────────────────────────── */
+        function setNav(){
+          var back=document.querySelector(".back-link");
+          var crumb=document.querySelector(".decode-crumb");
+          if(uploadId){
+            if(back){ back.href="./lab.html"; back.innerHTML='<span aria-hidden="true">&#8598;</span> Overview'; }
+            if(crumb) crumb.innerHTML='<a href="./lab.html">Overview</a><span aria-hidden="true">/</span><strong>Freestyle</strong>';
+          } else if(!trackId){
+            if(back){ back.href="./lab.html"; back.innerHTML='<span aria-hidden="true">&#8598;</span> Overview'; }
+            if(crumb) crumb.innerHTML='<a href="./lab.html">Overview</a><span aria-hidden="true">/</span><strong>Decode</strong>';
+          }
+          /* Catalog track keeps the default "Results" back link & breadcrumb. */
+        }
+        setNav();
 
         /* ── Init ────────────────────────────────────────────────── */
         if(uploadId) loadUploadTrack(uploadId);
