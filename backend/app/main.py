@@ -4,6 +4,7 @@ Served under /api on the same origin as the static front end.
 """
 
 import os
+import secrets
 import time
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from . import (
     mock,
     musixmatch,
     pipeline,
+    scoreboard,
     scoring,
     spotify,
 )
@@ -342,6 +344,70 @@ def upload_audio(job_id: str):
     if not path.exists():
         raise HTTPException(404, "audio not found")
     return FileResponse(str(path), media_type=_MIME.get(ext, "application/octet-stream"))
+
+
+# ---------------------------------------------------------------------------
+# Scoreboard — dual-axis leaderboard fed by what users actually decode.
+# Stores only our outputs + public metadata (never lyric content). Entries are
+# upserted by id; "mine" filtering uses an anonymous httponly 16lab_uid cookie.
+# ---------------------------------------------------------------------------
+
+_UID_COOKIE = "16lab_uid"
+
+
+class ScoreboardEntry(BaseModel):
+    # Pydantic drops any extra fields, so a stray lyrics/lines field can't ride
+    # in; scoreboard.upsert also rebuilds the entry from a strict whitelist.
+    id: str
+    source: str
+    title: str | None = None
+    artist: str | None = None
+    coverUrl: str | None = None
+    spotifyId: str | None = None
+    technical: int
+    metrics: list[dict] | None = None
+    depth: int | None = None
+    depthSub: list[dict] | None = None
+    depthRationale: str | None = None
+
+
+def _uid(request: Request) -> str | None:
+    return request.cookies.get(_UID_COOKIE)
+
+
+@api.post("/scoreboard")
+def scoreboard_post(req: ScoreboardEntry, request: Request, response: Response):
+    uid = _uid(request)
+    issue = not uid
+    if issue:
+        uid = secrets.token_hex(8)
+    try:
+        entry = scoreboard.upsert(req.model_dump(), scoreboard.owner_hash(uid))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    if issue:
+        response.set_cookie(
+            _UID_COOKIE, uid, httponly=True, samesite="lax", secure=True,
+            max_age=60 * 60 * 24 * 365,
+        )
+    return entry
+
+
+@api.get("/scoreboard")
+def scoreboard_list(
+    request: Request, sort: str = "technical", filter: str = "all", limit: int = 200
+):
+    uid = _uid(request)
+    owner = scoreboard.owner_hash(uid) if uid else None
+    return scoreboard.query(sort=sort, filt=filter, owner=owner, limit=limit)
+
+
+@api.get("/scoreboard/{entry_id}")
+def scoreboard_get(entry_id: str):
+    e = scoreboard.get(entry_id)
+    if not e:
+        raise HTTPException(404, "not found")
+    return e
 
 
 app.mount("/api", api)

@@ -2830,9 +2830,42 @@ body.is-decoding .track-overview {
 
 /* ---- Leaderboard ---- */
 
+/* ---- Leaderboard controls ---- */
+
+.lb-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  margin-bottom: 18px;
+}
+
+.lb-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lb-control-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+}
+
+.state-pill:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.state-pill:disabled:hover {
+  color: var(--ink-60);
+}
+
 .lb-head {
   display: grid;
-  grid-template-columns: 44px 52px minmax(0, 1fr) 84px 110px 200px;
+  grid-template-columns: 44px 52px minmax(0, 1fr) 86px 86px minmax(130px, 200px);
   align-items: center;
   gap: 18px;
   padding: 0 22px 10px;
@@ -2843,8 +2876,7 @@ body.is-decoding .track-overview {
   color: var(--ink-40);
 }
 
-.lbh-score,
-.lbh-tracks { text-align: center; }
+.lbh-axis { text-align: center; }
 
 .lb-list {
   list-style: none;
@@ -2857,7 +2889,7 @@ body.is-decoding .track-overview {
 
 .lb-row {
   display: grid;
-  grid-template-columns: 44px 52px minmax(0, 1fr) 84px 110px 200px;
+  grid-template-columns: 44px 52px minmax(0, 1fr) 86px 86px minmax(130px, 200px);
   align-items: center;
   gap: 18px;
   padding: 13px 22px;
@@ -2907,6 +2939,8 @@ body.is-decoding .track-overview {
 .is-top-3 .lb-medal { background: #cfe6ff; }
 
 .lb-avatar {
+  display: grid;
+  place-items: center;
   width: 52px;
   height: 52px;
   overflow: hidden;
@@ -2923,9 +2957,16 @@ body.is-decoding .track-overview {
   object-fit: cover;
 }
 
+.lb-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .lb-name {
   font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.015em;
   white-space: nowrap;
@@ -2933,50 +2974,177 @@ body.is-decoding .track-overview {
   text-overflow: ellipsis;
 }
 
-.lb-score-chip {
+.lb-artist {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-60);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dual-axis score chips: the active sort is solid; the OTHER axis is always
+   shown, just dimmed — that two-numbers-everywhere view is the whole point. */
+.lb-chip {
   justify-self: center;
-  min-width: 56px;
-  padding: 8px 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 66px;
+  padding: 7px 6px;
   border: 2px solid var(--border);
-  border-radius: 10px;
-  background: var(--orange);
-  color: var(--cream);
+  border-radius: 11px;
+  background: var(--paper);
+}
+
+.lb-chip-num {
   font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
   font-size: 19px;
   font-weight: 700;
-  text-align: center;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
+}
+
+.lb-chip-cap {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+}
+
+.lb-chip.is-on {
   box-shadow: 2px 3px 0 rgba(6, 19, 31, 0.85);
 }
 
-.lb-tracks {
-  text-align: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink-60);
+.lb-chip--tech.is-on {
+  background: var(--orange);
 }
 
-.lb-tracks strong {
-  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
-  color: var(--ink);
+.lb-chip--tech.is-on .lb-chip-num,
+.lb-chip--tech.is-on .lb-chip-cap {
+  color: var(--cream);
 }
 
-.lb-tag {
+.lb-chip--depth.is-on {
+  background: var(--blue);
+}
+
+.lb-chip--depth.is-on .lb-chip-num { color: var(--ink); }
+.lb-chip--depth.is-on .lb-chip-cap { color: rgba(6, 19, 31, 0.55); }
+
+.lb-chip.is-dim {
+  opacity: 0.6;
+  border-color: rgba(6, 19, 31, 0.2);
+}
+
+.lb-chip.is-dim .lb-chip-num { color: var(--ink-60); }
+
+.lb-chip.is-null .lb-chip-num { color: var(--ink-40); }
+
+.lb-tags {
   justify-self: start;
-  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.lb-src {
+  padding: 3px 9px;
   border: 2px solid rgba(6, 19, 31, 0.18);
   border-radius: 999px;
   background: var(--paper);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-60);
   white-space: nowrap;
 }
 
-.lb-tag.is-top-tag {
+.lb-src--freestyle {
   border-color: rgba(67, 167, 255, 0.5);
-  background: rgba(67, 167, 255, 0.1);
+  background: rgba(67, 167, 255, 0.12);
   color: #1f74c4;
+}
+
+.lb-insight {
+  padding: 3px 10px;
+  border: 2px solid rgba(6, 19, 31, 0.18);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lb-insight.is-substance {
+  border-color: rgba(67, 167, 255, 0.55);
+  background: rgba(67, 167, 255, 0.12);
+  color: #1f74c4;
+}
+
+.lb-insight.is-craft {
+  border-color: rgba(255, 106, 0, 0.5);
+  background: rgba(255, 106, 0, 0.12);
+  color: #c24f00;
+}
+
+.lb-insight.is-balanced {
+  background: var(--paper);
+  color: var(--ink-60);
+}
+
+/* ---- Leaderboard empty / no-match state ---- */
+
+.lb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 52px 24px;
+  text-align: center;
+  border: 2px dashed rgba(6, 19, 31, 0.3);
+  border-radius: 18px;
+  background: var(--cream);
+}
+
+.lb-empty-mark {
+  width: 42px;
+  height: 42px;
+  background: var(--orange);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 6C53 28 72 47 94 50C72 53 53 72 50 94C47 72 28 53 6 50C28 47 47 28 50 6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 6C53 28 72 47 94 50C72 53 53 72 50 94C47 72 28 53 6 50C28 47 47 28 50 6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.lb-empty p {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink-60);
+  text-wrap: pretty;
+}
+
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 20px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--cream);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 3px 4px 0 rgba(6, 19, 31, 0.85);
+  transition: transform var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+.btn-pill:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 6px 0 rgba(6, 19, 31, 0.85);
 }
 
 /* ---- Compare ---- */
@@ -3149,6 +3317,32 @@ body.is-decoding .track-overview {
   color: var(--ink-40);
 }
 
+/* Dual axis: two big numbers per slot (Technical + Depth). Numbers stay ink
+   for legibility; the caption carries the axis colour (orange craft / blue
+   lyricism), echoing the leaderboard chips. */
+.cmp-bigscore--dual {
+  align-items: flex-end;
+  gap: 26px;
+}
+
+.cmp-big {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cmp-bigscore--dual .cmp-big-num {
+  font-size: 46px;
+  color: var(--ink);
+}
+
+.cmp-big-num.is-null {
+  color: var(--ink-40);
+}
+
+.cmp-big .cmp-big-cap { color: #c24f00; }
+.cmp-big--depth .cmp-big-cap { color: #1f74c4; }
+
 .cmp-vs {
   align-self: center;
   font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
@@ -3180,6 +3374,49 @@ body.is-decoding .track-overview {
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--ink);
+}
+
+/* Two metric groups inside Compare: Technical (5) then Depth (6). */
+.cmp-mgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cmp-mgroup + .cmp-mgroup {
+  margin-top: 4px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(6, 19, 31, 0.12);
+}
+
+.cmp-mgroup-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cmp-mgroup-head strong {
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.cmp-mgroup-head span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+}
+
+.cmp-nometrics {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-60);
 }
 
 .cmp-bars {
@@ -3436,33 +3673,29 @@ body.is-decoding .track-overview {
   }
 
   .lb-row {
-    grid-template-columns: 40px 48px minmax(0, 1fr) auto;
+    grid-template-columns: 40px 48px minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "rank avatar name   score"
-      "rank avatar tracks tag";
-    gap: 6px 14px;
-    row-gap: 10px;
+      "rank avatar meta tech depth"
+      "rank avatar tags tags tags";
+    gap: 8px 14px;
   }
 
   .lb-rank { grid-area: rank; align-self: center; }
   .lb-avatar { grid-area: avatar; align-self: center; }
-  .lb-name { grid-area: name; align-self: end; }
-  .lb-score-chip { grid-area: score; justify-self: end; align-self: center; }
+  .lb-meta { grid-area: meta; align-self: center; }
+  .lb-row .lb-chip--tech { grid-area: tech; align-self: center; }
+  .lb-row .lb-chip--depth { grid-area: depth; align-self: center; }
 
-  .lb-row .lb-tracks {
-    grid-area: tracks;
-    justify-self: start;
-    align-self: center;
-    text-align: left;
-  }
-
-  .lb-row .lb-tag {
-    grid-area: tag;
-    justify-self: end;
-    align-self: center;
+  .lb-row .lb-tags {
+    grid-area: tags;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 2px;
   }
 
   .cmp-big-num { font-size: 56px; }
+  .cmp-bigscore--dual .cmp-big-num { font-size: 38px; }
 }
 
 @media (max-width: 620px) {
@@ -3727,35 +3960,32 @@ body.is-decoding .track-overview {
   }
 
   .lb-row {
-    grid-template-columns: 34px 44px minmax(0, 1fr);
+    grid-template-columns: 34px 44px 1fr 1fr;
     grid-template-areas:
-      "rank avatar name"
-      "rank avatar score"
-      "tag  tag    tag";
-    gap: 4px 12px;
+      "rank avatar meta meta"
+      "rank avatar tech depth"
+      "tags tags   tags tags";
+    gap: 8px 10px;
     padding: 13px 16px;
   }
 
-  .lb-rank { grid-area: rank; }
-  .lb-avatar { grid-area: avatar; }
-  .lb-name { grid-area: name; align-self: end; }
+  .lb-rank { grid-area: rank; align-self: start; }
+  .lb-avatar { grid-area: avatar; align-self: start; }
+  .lb-meta { grid-area: meta; align-self: center; }
 
-  .lb-row .lb-score-chip {
-    grid-area: score;
+  .lb-row .lb-chip {
     justify-self: start;
-    align-self: start;
-    min-width: 50px;
-    padding: 5px 12px;
-    font-size: 16px;
+    min-width: 60px;
   }
 
-  .lb-row .lb-tracks {
-    display: none;
-  }
+  .lb-row .lb-chip--tech { grid-area: tech; }
+  .lb-row .lb-chip--depth { grid-area: depth; }
 
-  .lb-row .lb-tag {
-    grid-area: tag;
-    justify-self: start;
+  .lb-row .lb-tags {
+    grid-area: tags;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     margin-top: 4px;
   }
 
@@ -3792,8 +4022,20 @@ body.is-decoding .track-overview {
     gap: 2px;
   }
 
+  .cmp-bigscore--dual {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 18px;
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+
   .cmp-big-num {
     font-size: 46px;
+  }
+
+  .cmp-bigscore--dual .cmp-big-num {
+    font-size: 36px;
   }
 
   .cmp-avatar {
