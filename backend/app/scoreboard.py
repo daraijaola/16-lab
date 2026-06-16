@@ -16,7 +16,7 @@ import threading
 import time
 from pathlib import Path
 
-CAP = 200  # max entries; eviction protects catalog + owned entries (see _evict)
+CAP = 300  # max entries; eviction protects catalog + owned entries (see _evict)
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 _STORE = _DATA_DIR / "scoreboard.json"
@@ -44,6 +44,23 @@ def _persist() -> None:
         tmp.replace(_STORE)
     except OSError:
         pass
+
+
+def _migrate() -> None:
+    """Backfill the `overall` field on entries persisted before it existed, so
+    legacy rows still rank under the default Overall board."""
+    changed = False
+    for e in _board.values():
+        if "overall" not in e:
+            d = e.get("depth")
+            t = e.get("technical", 0)
+            e["overall"] = None if d is None else int(round((t + d) / 2))
+            changed = True
+    if changed:
+        _persist()
+
+
+_migrate()
 
 
 def owner_hash(uid: str) -> str:
@@ -89,6 +106,11 @@ def upsert(payload: dict, owner: str) -> dict:
 
     depth = payload.get("depth")
     depth_sub = payload.get("depthSub")
+    technical = _clamp(payload.get("technical"))
+    depth_val = None if depth is None else _clamp(depth)
+    # overall = mean of the two axes; omitted (None) until Depth lands, so a
+    # Technical-only entry doesn't rank in the default Overall/Today board.
+    overall = None if depth_val is None else int(round((technical + depth_val) / 2))
     entry = {
         "id": eid[:120],
         "source": source,
@@ -96,13 +118,14 @@ def upsert(payload: dict, owner: str) -> dict:
         "artist": str(payload.get("artist") or "")[:200],
         "coverUrl": (str(payload["coverUrl"])[:500] if payload.get("coverUrl") else None),
         "spotifyId": (str(payload["spotifyId"])[:64] if payload.get("spotifyId") else None),
-        "technical": _clamp(payload.get("technical")),
+        "technical": technical,
         "metrics": _clean_metrics(payload.get("metrics"), 6),
-        "depth": (None if depth is None else _clamp(depth)),
+        "depth": depth_val,
         "depthSub": (None if depth_sub is None else _clean_metrics(depth_sub, 6)),
         "depthRationale": (
             str(payload["depthRationale"])[:300] if payload.get("depthRationale") else None
         ),
+        "overall": overall,
         "owner": owner,
         "ts": int(time.time()),
     }
@@ -130,27 +153,50 @@ def get(entry_id: str) -> dict | None:
     return _board.get(entry_id)
 
 
-def query(sort: str = "technical", filt: str = "all", owner: str | None = None, limit: int = 200):
+def _utc_day_start(now: float | None = None) -> int:
+    """Epoch seconds at 00:00 UTC of the current day (daily board boundary)."""
+    import datetime as _dt
+    n = _dt.datetime.now(_dt.timezone.utc) if now is None else _dt.datetime.fromtimestamp(now, _dt.timezone.utc)
+    midnight = _dt.datetime(n.year, n.month, n.day, tzinfo=_dt.timezone.utc)
+    return int(midnight.timestamp())
+
+
+def query(
+    window: str = "today",
+    scope: str = "global",
+    sort: str = "overall",
+    owner: str | None = None,
+    limit: int = 300,
+):
+    """Global leaderboard. window=today restricts to the current UTC day;
+    scope=mine restricts to the caller's owner hash. Sorting:
+      - overall: only entries with a computed overall (both axes); desc.
+      - technical: all entries (Technical is always present); desc.
+      - depth: all entries, higher depth first, null-depth last.
+    Ties always break by most-recent ts."""
     items = list(_board.values())
 
-    if filt == "catalog":
-        items = [e for e in items if e["source"] == "catalog"]
-    elif filt == "freestyle":
-        items = [e for e in items if e["source"] == "freestyle"]
-    elif filt == "mine":
+    if window == "today":
+        start = _utc_day_start()
+        items = [e for e in items if e["ts"] >= start]
+
+    if scope == "mine":
         items = [e for e in items if owner and e["owner"] == owner]
 
-    # Stable sort: pre-sort by ts desc so ties break by most-recent.
+    # Stable base order: ts desc so ties break by most-recent.
     items.sort(key=lambda e: e["ts"], reverse=True)
+
     if sort == "recent":
-        pass  # already ts desc
+        pass  # already ts desc — the decode library / recents feed
     elif sort == "depth":
-        # Depth present first (nulls last), higher depth first; ties keep ts desc.
         items.sort(
             key=lambda e: (e["depth"] is not None, e["depth"] if e["depth"] is not None else -1),
             reverse=True,
         )
-    else:  # technical (default, always present)
+    elif sort == "technical":
         items.sort(key=lambda e: e["technical"], reverse=True)
+    else:  # overall (default) — Technical-only entries omitted until Depth lands
+        items = [e for e in items if e.get("overall") is not None]
+        items.sort(key=lambda e: e["overall"], reverse=True)
 
     return items[: max(1, min(500, limit))]

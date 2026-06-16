@@ -40,7 +40,7 @@
             <span class="page-kicker">Library</span>
             <h1>Your decodes</h1>
           </div>
-          <span class="decodes-count" id="decodesCount">10 decoded</span>
+          <span class="decodes-count" id="decodesCount"></span>
         </header>
 
         <div class="decodes-controls">
@@ -86,18 +86,9 @@
 
     <script>
       (function () {
-        var DATA = [
-          { type: "catalog", title: "Starlight", artist: "Dave", score: 87, cover: "./assets/tracks/starlight-cover.jpg" },
-          { type: "freestyle", title: "Freestyle take 03", artist: "Uploaded \u00b7 1:42", score: 74, wave: [36, 72, 48, 88, 56, 30] },
-          { type: "catalog", title: "Black", artist: "Dave", score: 91, ph: "ink" },
-          { type: "catalog", title: "Sprinter", artist: "Dave & Central Cee", score: 82, ph: "orange" },
-          { type: "freestyle", title: "Kitchen freestyle", artist: "Uploaded \u00b7 2:18", score: 69, wave: [60, 40, 84, 52, 74, 44] },
-          { type: "catalog", title: "Clash", artist: "Dave & Stormzy", score: 84, ph: "blue" },
-          { type: "catalog", title: "Vossi Bop", artist: "Stormzy", score: 79, ph: "orange" },
-          { type: "freestyle", title: "Late night take", artist: "Uploaded \u00b7 0:58", score: 71, wave: [48, 80, 38, 66, 90, 50] },
-          { type: "catalog", title: "Location", artist: "Dave \u00b7 feat. Burna Boy", score: 80, ph: "blue" },
-          { type: "catalog", title: "In The Fire", artist: "Dave", score: 76, ph: "ink" }
-        ];
+        "use strict";
+        /* Your decodes = the real board, scoped to this device's 16lab_uid.
+           No mock library — empty until you actually decode something. */
 
         var grid = document.getElementById("decodesGrid");
         var empty = document.getElementById("decodesEmpty");
@@ -106,28 +97,48 @@
         var searchEl = document.getElementById("decodesSearch");
 
         var state = { filter: "all", sort: "recent", q: "" };
+        var DATA = [];
 
         function esc(t) {
-          return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+        function num(v) { return typeof v === "number" && isFinite(v) ? v : null; }
+        function initials(s) {
+          var p = String(s || "").trim().split(/\s+/).filter(Boolean);
+          if (!p.length) return "?";
+          return (p[0][0] + (p[1] ? p[1][0] : "")).toUpperCase();
+        }
+
+        function toCard(e) {
+          var title = e.title || (e.source === "freestyle" ? "Untitled freestyle" : "Untitled");
+          var artist = e.artist || (e.source === "freestyle" ? "You" : "Unknown artist");
+          var ov = num(e.overall), tech = num(e.technical);
+          return {
+            type: e.source,
+            title: title,
+            artist: artist,
+            score: ov != null ? ov : tech,
+            scoreNull: ov == null && tech == null,
+            coverUrl: e.coverUrl || null,
+            href: e.source === "freestyle"
+              ? "./decode.html?upload=" + encodeURIComponent(String(e.id).replace(/^upload-/, ""))
+              : "./decode.html?id=" + encodeURIComponent(e.id),
+            ts: e.ts || 0
+          };
         }
 
         function cardHTML(d) {
-          var phClass = d.ph === "blue" ? " cover-ph--blue" : d.ph === "orange" ? " cover-ph--orange" : "";
-          var art = d.type === "freestyle"
-            ? '<span class="card-art card-art-wave" aria-hidden="true">' +
-                d.wave.map(function (h) { return '<span style="--h:' + h + '%"></span>'; }).join("") +
-              "</span>"
-            : d.cover
-              ? '<span class="card-art"><img src="' + d.cover + '" alt="' + esc(d.title) + ' artwork" /></span>'
-              : '<span class="card-art cover-ph' + phClass + '" aria-hidden="true"></span>';
+          var art = d.coverUrl
+            ? '<span class="card-art"><img src="' + esc(d.coverUrl) + '" alt="' + esc(d.title) + ' artwork" onerror="this.parentNode.classList.add(\'cover-ph\',\'is-mono\');this.parentNode.textContent=\'' + esc(initials(d.title || d.artist)) + '\'" /></span>'
+            : '<span class="card-art is-mono">' + esc(initials(d.title || d.artist)) + "</span>";
           return (
-            '<a class="decode-card" href="./decode.html">' +
+            '<a class="decode-card" href="' + esc(d.href) + '">' +
               art +
               '<span class="card-meta">' +
                 "<strong>" + esc(d.title) + "</strong>" +
                 '<span class="card-artist">' + esc(d.artist) + "</span>" +
               "</span>" +
-              '<span class="score-chip">' + d.score + "</span>" +
+              '<span class="score-chip">' + (d.score == null ? "&mdash;" : d.score) + "</span>" +
             "</a>"
           );
         }
@@ -140,7 +151,9 @@
             return matchType && matchQ;
           });
           if (state.sort === "score") {
-            list = list.slice().sort(function (a, b) { return b.score - a.score; });
+            list = list.slice().sort(function (a, b) { return (b.score || 0) - (a.score || 0); });
+          } else {
+            list = list.slice().sort(function (a, b) { return b.ts - a.ts; });
           }
 
           var filtered = state.filter !== "all" || q;
@@ -149,16 +162,17 @@
             empty.hidden = false;
             emptyMsg.innerHTML = q
               ? "No decodes match &ldquo;" + esc(state.q.trim()) + "&rdquo; &mdash; try another spelling or filter."
-              : "Nothing here yet &mdash; your first bar is one search away.";
+              : (DATA.length === 0
+                  ? "Nothing decoded yet &mdash; your first bar is one search away."
+                  : "Nothing in this filter yet.");
           } else {
             grid.hidden = false;
             empty.hidden = true;
             grid.innerHTML = list.map(cardHTML).join("");
           }
-
-          countEl.textContent = filtered
-            ? list.length + " of " + DATA.length
-            : DATA.length + " decoded";
+          countEl.textContent = DATA.length === 0
+            ? ""
+            : (filtered ? list.length + " of " + DATA.length : DATA.length + " decoded");
         }
 
         function wireSwitch(id, key) {
@@ -173,13 +187,12 @@
         }
         wireSwitch("filterGroup", "filter");
         wireSwitch("sortGroup", "sort");
+        searchEl.addEventListener("input", function () { state.q = searchEl.value; render(); });
 
-        searchEl.addEventListener("input", function () {
-          state.q = searchEl.value;
-          render();
-        });
-
-        render();
+        fetch("/api/scoreboard?window=all&scope=mine&sort=recent&limit=300", { credentials: "same-origin" })
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (entries) { DATA = entries.map(toCard); render(); })
+          .catch(function () { DATA = []; render(); });
       })();
     </script>
   </body>
