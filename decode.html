@@ -231,7 +231,10 @@
         function durToSec(d) { var p=String(d).split(":"); return (+p[0])*60+(+p[1]); }
 
         /* ── URL param ───────────────────────────────────────────── */
-        var trackId = new URLSearchParams(window.location.search).get("id") || "";
+        var _params = new URLSearchParams(window.location.search);
+        var trackId = _params.get("id") || "";
+        var uploadId = _params.get("upload") || "";
+        var _uploadAudio = null; /* real <audio> for the uploaded freestyle */
 
         /* ── Freestyle mock (keeps the demo lane working) ────────── */
         var FREESTYLE = {
@@ -452,8 +455,8 @@
           var d=DATA[state.lane];
           var allText=lines.map(function(l){return l.text;});
 
-          if (d.source==="musixmatch") {
-            /* Catalog lane → live API */
+          if (d.source==="musixmatch"||d.source==="upload") {
+            /* Catalog & uploaded freestyle → live API (uncharted bars decode too) */
             fetch("/api/decode/bar",{
               method:"POST",
               headers:{"Content-Type":"application/json"},
@@ -580,16 +583,21 @@
           } else if(state.timer){clearInterval(state.timer);state.timer=null;}
         }
         /* play/pause handled by Spotify-aware listener above */
+        function _isUpload(){ var d=DATA[state.lane]; return !!(_uploadAudio&&d&&d.source==="upload"); }
         function seekFromEvent(e){
           var rect=trackEl.getBoundingClientRect();
           var x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
-          state.cur=Math.max(0,Math.min(1,x/rect.width))*TOTAL_SECONDS;
+          var frac=Math.max(0,Math.min(1,x/rect.width));
+          if(_isUpload()){ _uploadAudio.currentTime=frac*(TOTAL_SECONDS||_uploadAudio.duration||0); return; }
+          state.cur=frac*TOTAL_SECONDS;
           paintPlayer();activeKaraoke();
         }
         trackEl.addEventListener("click",seekFromEvent);
         trackEl.addEventListener("keydown",function(e){
-          if(e.key==="ArrowRight"){state.cur=Math.min(TOTAL_SECONDS,state.cur+3);paintPlayer();activeKaraoke();}
-          if(e.key==="ArrowLeft"){state.cur=Math.max(0,state.cur-3);paintPlayer();activeKaraoke();}
+          var delta=e.key==="ArrowRight"?3:e.key==="ArrowLeft"?-3:0;
+          if(!delta) return;
+          if(_isUpload()){ _uploadAudio.currentTime=Math.max(0,Math.min(TOTAL_SECONDS,_uploadAudio.currentTime+delta)); return; }
+          state.cur=Math.max(0,Math.min(TOTAL_SECONDS,state.cur+delta));paintPlayer();activeKaraoke();
         });
 
         /* ── Playback dock ───────────────────────────────────────── */
@@ -644,9 +652,20 @@
         });
 
         /* Play button: drive Spotify when connected, local timer otherwise */
+        function paintPlayBtn(on){
+          playBtn.classList.toggle("is-playing",on);
+          playBtn.setAttribute("aria-label",on?"Pause":"Play");
+          var sp=playBtn.querySelector("span"); if(sp) sp.className=on?"ico-pause":"ico-play";
+        }
         playBtn.addEventListener("click",function(e){
           e.stopImmediatePropagation();
           var d=DATA[state.lane];
+          if(_uploadAudio&&d&&d.source==="upload"){
+            /* Real uploaded audio drives playback + karaoke (play/pause events sync UI) */
+            if(_uploadAudio.paused) _uploadAudio.play().catch(function(){});
+            else _uploadAudio.pause();
+            return;
+          }
           if(state.connected&&d&&d.spotifyId){
             _ignorePlayStateUntil=Date.now()+3000;
             if(state.playing){
@@ -684,6 +703,7 @@
         /* ── Lane switching ──────────────────────────────────────── */
         function renderLane() {
           if(state.timer){clearInterval(state.timer);state.timer=null;}
+          if(_uploadAudio){ try{_uploadAudio.pause();}catch(e){} }
           state.playing=false;state.cur=0;state.selected=null;state.connected=false;state.token++;
           closeDecode(); _lastKaraokeEl=null;
           /* Reset metric focus & rhyme controls */
@@ -695,6 +715,7 @@
           var isLive=(d.source==="musixmatch");
           hint.textContent=isLive?"Connect to play, or tap any bar to decode":(d.audio?"Press play, or tap any bar to decode":"Tap any bar to decode");
           renderHead();renderTranscript();renderOverview();renderDock();
+          renderMatchBanner(d);
           window.scrollTo(0,0);
         }
         function setLane(lane) {
@@ -737,6 +758,77 @@
               fetchDepth();     /* parallel: AI lyricism score (cached for consistency) */
             })
             .catch(function(){ showError("Couldn't load track — go back and try another."); });
+        }
+
+        /* ── Load uploaded freestyle (Scribe pipeline result) ───────── */
+        function loadUploadTrack(jobId){
+          showLoading();
+          fetch("/api/upload/"+encodeURIComponent(jobId)+"/result")
+            .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
+            .then(function(res){
+              var lineIdx=0;
+              var sections=(res.sections||[]).map(function(sec){
+                return {name:sec.name,lines:(sec.lines||[]).map(function(ln){
+                  return {id:"L"+(lineIdx++),text:ln.text,t:ln.t};
+                })};
+              });
+              DATA.freestyle={
+                id:res.id, title:res.title, artist:res.artist,
+                duration:res.durationSec?fmt(res.durationSec):"0:00",
+                score:0, cover:"wave", audio:true, source:"upload", synced:true,
+                spotifyId:null, metrics:[], sections:sections,
+                matched:res.matched, match:res.match,
+                audioUrl:"/api/upload/"+encodeURIComponent(jobId)+"/audio"
+              };
+              state.lane="freestyle";
+              lanePills.forEach(function(p){p.classList.toggle("is-active",p.getAttribute("data-lane")==="freestyle");});
+              renderLane();
+              setupUploadAudio(DATA.freestyle.audioUrl);
+              fetchLiveScore(); /* rhymes + Technical score from /api/score */
+              fetchDepth();     /* AI Depth score (cached) */
+            })
+            .catch(function(st){
+              if(st===409){ setTimeout(function(){loadUploadTrack(jobId);},1500); return; } /* not ready yet */
+              showError("Couldn't load your freestyle — it may have failed. Try uploading again.");
+            });
+        }
+
+        /* Wire a real <audio> element to drive the player + karaoke */
+        function setupUploadAudio(url){
+          if(_uploadAudio){ try{_uploadAudio.pause();}catch(e){} }
+          _uploadAudio=new Audio(url);
+          _uploadAudio.preload="metadata";
+          _uploadAudio.addEventListener("loadedmetadata",function(){
+            if(_uploadAudio.duration&&isFinite(_uploadAudio.duration)){
+              TOTAL_SECONDS=_uploadAudio.duration; state.total=TOTAL_SECONDS;
+              playerTotalEl.textContent=fmt(TOTAL_SECONDS);
+              trackEl.setAttribute("aria-valuemax",Math.round(TOTAL_SECONDS)||1);
+            }
+          });
+          _uploadAudio.addEventListener("timeupdate",function(){
+            state.cur=_uploadAudio.currentTime; paintPlayer(); activeKaraoke();
+          });
+          _uploadAudio.addEventListener("play",function(){ state.playing=true; paintPlayBtn(true); });
+          _uploadAudio.addEventListener("pause",function(){ state.playing=false; paintPlayBtn(false); });
+          _uploadAudio.addEventListener("ended",function(){ state.playing=false; paintPlayBtn(false); });
+        }
+
+        /* Match / no-match ribbon for the uploaded freestyle */
+        function renderMatchBanner(d){
+          var ex=document.getElementById("uploadBanner"); if(ex) ex.remove();
+          if(!d||typeof d.matched!=="boolean") return;
+          var b=document.createElement("div"); b.id="uploadBanner";
+          if(d.matched&&d.match){
+            b.className="match-ribbon is-matched";
+            b.innerHTML='<span class="ribbon-ico" aria-hidden="true"></span>'+
+              '<span class="ribbon-text">Identified: <strong>'+esc(d.match.title)+'</strong> by '+esc(d.match.artist)+'</span>'+
+              (d.match.trackId?'<a class="ribbon-link" href="./decode.html?id='+encodeURIComponent(d.match.trackId)+'">Open catalog version</a>':'');
+          } else {
+            b.className="match-ribbon is-uncharted";
+            b.innerHTML='<span class="ribbon-ico" aria-hidden="true"></span>'+
+              '<span class="ribbon-text"><strong>No platform has these lyrics.</strong> 16 Lab just decoded them.</span>';
+          }
+          if(head&&head.parentNode) head.parentNode.insertBefore(b, head.nextSibling);
         }
 
         /* ── Check Spotify connection on page load (after OAuth return) ── */
@@ -926,7 +1018,7 @@
 
         /* ── Fetch live score from /api/score ────────────────────── */
         function fetchLiveScore() {
-          var d=DATA.starlight; if(!d) return;
+          var d=DATA[state.lane]; if(!d) return;
           _liveLines=flatLines().map(function(ln){ return {id:ln.id,text:ln.text}; });
           if(!_liveLines.length) return;
           fetch("/api/score",{
@@ -954,8 +1046,8 @@
            load. On any failure we just hide the Depth tile — never break the
            page; Technical + rhymes already rendered from /api/score. */
         function fetchDepth() {
-          var d=DATA.starlight;
-          if(!d||d.source!=="musixmatch") return; /* live mode only */
+          var d=DATA[state.lane];
+          if(!d||(d.source!=="musixmatch"&&d.source!=="upload")) return; /* live/upload only */
           var src=_liveLines||flatLines().map(function(ln){return {id:ln.id,text:ln.text};});
           var texts=src.map(function(l){return l.text;});
           if(!texts.length) return;
@@ -963,7 +1055,7 @@
           renderHead(); renderOverview();
           fetch("/api/depth",{
             method:"POST",headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({trackId:trackId,lines:texts,track:{title:d.title,artist:d.artist}})
+            body:JSON.stringify({trackId:(d.id||trackId||uploadId),lines:texts,track:{title:d.title,artist:d.artist}})
           })
           .then(function(r){ return r.ok?r.json():Promise.reject(); })
           .then(function(res){
@@ -984,11 +1076,12 @@
           rhLegend.hidden=!_rhymesOn;
         });
 
-        /* ── Show lane switch if no catalog track ────────────────── */
-        if(!trackId) laneSwitch.hidden=false;
+        /* ── Show lane switch only with no catalog track and no upload ── */
+        if(!trackId&&!uploadId) laneSwitch.hidden=false;
 
         /* ── Init ────────────────────────────────────────────────── */
-        setLane("starlight");
+        if(uploadId) loadUploadTrack(uploadId);
+        else setLane("starlight");
       })();
     </script>
   </body>
