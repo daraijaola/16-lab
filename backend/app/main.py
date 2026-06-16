@@ -184,4 +184,21 @@ def spotify_pause(request: Request):
     return spotify.pause(sid)
 
 
+# ---------------------------------------------------------------------------
+# Score — stateless: accepts the rendered lines, returns score + rhyme spans.
+# Offsets are guaranteed to align with the displayed text because the FE sends
+# exactly what it rendered. Never stores any lyric content.
+# ---------------------------------------------------------------------------
+
+class ScoreRequest(BaseModel):
+    lines: list[dict]
+
+
+@api.post("/score")
+def score_lines(req: ScoreRequest):
+    if not req.lines:
+        raise HTTPException(400, "lines required")
+    return scoring.score_track(req.lines)
+
+
 app.mount("/api", api)

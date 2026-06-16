@@ -3819,3 +3819,204 @@ body.is-decoding .track-overview {
     transition-duration: 0ms !important;
   }
 }
+
+/* ====================================================== */
+/* ===============  RHYME HIGHLIGHTING  ================== */
+/* ====================================================== */
+
+mark.rh {
+  background: none;
+  color: inherit;
+}
+
+mark.rh-end {
+  text-decoration: underline solid 2px;
+  text-underline-offset: 3px;
+}
+
+mark.rh-internal {
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 3px;
+}
+
+mark.rh-multi {
+  padding: 1px 3px;
+  margin: 0 1px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+}
+
+/* 6-colour palette — all pass 4.5:1 on cream #fffaf0 */
+mark.rh-g0 { color: #c45000; }
+mark.rh-g1 { color: #1565c0; }
+mark.rh-g2 { color: #00796b; }
+mark.rh-g3 { color: #6a1b9a; }
+mark.rh-g4 { color: #558b2f; }
+mark.rh-g5 { color: #c62828; }
+
+/* Toggle off: strip all rhyme styling (marks stay in DOM) */
+.rhymes-off mark.rh {
+  text-decoration: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0;
+  margin: 0;
+}
+
+/* Metric focus: dim bars that lack the focused rhyme type */
+body[class*="is-metric-"] .transcript-scroll .bar {
+  opacity: 0.28;
+  transition: opacity 200ms ease;
+}
+
+body.is-metric-rhyme   .transcript-scroll .bar:has(.rh-end),
+body.is-metric-internal .transcript-scroll .bar:has(.rh-internal),
+body.is-metric-multi   .transcript-scroll .bar:has(.rh-multi) {
+  opacity: 1;
+}
+
+body.is-metric-rhyme   mark.rh:not(.rh-end),
+body.is-metric-internal mark.rh:not(.rh-internal),
+body.is-metric-multi   mark.rh:not(.rh-multi) {
+  text-decoration: none !important;
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* ── Rhyme toggle button ─────────────────────────────── */
+
+.t-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rhymes-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1.5px solid rgba(6, 19, 31, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+  cursor: pointer;
+  transition: background var(--speed), color var(--speed), border-color var(--speed);
+}
+
+.rhymes-toggle.is-on {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+.rhymes-toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ── Rhyme legend ────────────────────────────────────── */
+
+.rh-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 7px 22px;
+  border-bottom: 1px solid rgba(6, 19, 31, 0.06);
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-40);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rh-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rh-leg-end::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 2px;
+  background: #c45000;
+  vertical-align: middle;
+}
+
+.rh-leg-internal::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 2.5px dotted #1565c0;
+  vertical-align: middle;
+}
+
+.rh-leg-multi::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 13px;
+  background: rgba(0, 121, 107, 0.18);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+/* ── Metric tiles: clickable ─────────────────────────── */
+
+.metric-tile {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 7px 9px;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  transition: background var(--speed), border-color var(--speed);
+}
+
+.metric-tile:hover {
+  background: rgba(6, 19, 31, 0.04);
+}
+
+.metric-tile.is-focused {
+  background: rgba(255, 106, 0, 0.08);
+  border-color: rgba(255, 106, 0, 0.28);
+}
+
+.metric-tile:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ── Cover placeholder in share card ────────────────── */
+
+.sc-cover-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 4.8cqw;
+  font-weight: 700;
+  color: var(--c-soft);
+  background: var(--c-chip);
+}
+
+@media (max-width: 620px) {
+  .rh-legend {
+    padding: 7px 16px;
+    gap: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+}

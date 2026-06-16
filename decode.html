@@ -41,7 +41,7 @@
             <span aria-hidden="true">/</span>
             <strong>Decode</strong>
           </div>
-          <div class="state-switch lane-switch" role="group" aria-label="Preview which lane">
+          <div class="state-switch lane-switch" role="group" aria-label="Preview which lane" hidden>
             <button type="button" class="state-pill" data-lane="freestyle">Freestyle &middot; audio</button>
             <button type="button" class="state-pill is-active" data-lane="starlight">Catalog track</button>
           </div>
@@ -82,7 +82,7 @@
               <span class="player-fill" id="playerFill"></span>
               <span class="player-knob" id="playerKnob"></span>
             </div>
-            <span class="player-time player-total" id="playerTotal">3:42</span>
+            <span class="player-time player-total" id="playerTotal">0:00</span>
             <span class="player-source" id="playerSource">
               <span class="sp-glyph-sm" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="15" height="15">
@@ -103,7 +103,15 @@
           <section class="transcript-pane" aria-label="Transcript">
             <div class="transcript-head">
               <span class="t-label">Transcript</span>
-              <span class="t-hint" id="transcriptHint">Tap any bar to decode it</span>
+              <div class="t-head-right">
+                <span class="t-hint" id="transcriptHint">Tap any bar to decode it</span>
+                <button type="button" class="rhymes-toggle is-on" id="rhymesToggle" hidden aria-label="Toggle rhyme highlighting">Rhymes</button>
+              </div>
+            </div>
+            <div class="rh-legend" id="rhLegend" hidden aria-hidden="true">
+              <span class="rh-leg rh-leg-end">end</span>
+              <span class="rh-leg rh-leg-internal">internal</span>
+              <span class="rh-leg rh-leg-multi">multi</span>
             </div>
             <div class="transcript-scroll" id="transcriptScroll"></div>
           </section>
@@ -228,11 +236,13 @@
         /* ── Freestyle mock (keeps the demo lane working) ────────── */
         var FREESTYLE = {
           title:"Freestyle — Untitled", artist:"You", duration:"1:42",
-          score:74, cover:"wave", audio:true, feat:3,
+          score:74, cover:"wave", audio:true, source:"scribe", feat:3,
           metrics:[
-            {label:"Rhyme density",v:71},{label:"Internal rhymes",v:66},
-            {label:"Vocabulary richness",v:77},{label:"Multisyllabic rate",v:80},
-            {label:"Syllable variance",v:62}
+            {key:"rhyme",   label:"Rhyme density",       v:71},
+            {key:"internal",label:"Internal rhymes",      v:66},
+            {key:"vocab",   label:"Vocabulary richness",  v:77},
+            {key:"multi",   label:"Multisyllabic rate",   v:80},
+            {key:"variance",label:"Syllable variance",    v:62}
           ],
           sections:[{name:"Verse",lines:[
             {t:0, text:"No beat picked, I’m just talking off the dome"},
@@ -247,9 +257,13 @@
 
         /* ── State ───────────────────────────────────────────────── */
         var DATA  = { starlight: null, freestyle: FREESTYLE };
-        var TOTAL_SECONDS = 102;
+        var TOTAL_SECONDS = 0;
         var state = { lane:"starlight", selected:null, token:0, playing:false,
-                      cur:0, total:102, connected:false, timer:null, lastDecode:null };
+                      cur:0, total:0, connected:false, timer:null, lastDecode:null };
+        /* Rhyme/metric state (persists across lane changes) */
+        var _rhymesOn = true;
+        var _metricFocus = null;
+        var _liveLines = null; /* [{id,text}] for current live track */
 
         /* ── Elements ────────────────────────────────────────────── */
         var head     = document.getElementById("decodeHead");
@@ -265,9 +279,13 @@
         var playerTotalEl= document.getElementById("playerTotal");
         var playerSource= document.getElementById("playerSource");
         var playerSourceLabel= document.getElementById("playerSourceLabel");
-        var hint     = document.getElementById("transcriptHint");
-        var scrim    = document.getElementById("sheetScrim");
-        var lanePills= Array.prototype.slice.call(document.querySelectorAll(".lane-switch [data-lane]"));
+        var hint         = document.getElementById("transcriptHint");
+        var scrim        = document.getElementById("sheetScrim");
+        var lanePills    = Array.prototype.slice.call(document.querySelectorAll(".lane-switch [data-lane]"));
+        var rhymesToggle = document.getElementById("rhymesToggle");
+        var rhLegend     = document.getElementById("rhLegend");
+        var laneSwitch   = document.querySelector(".lane-switch");
+        var transcriptPane = document.querySelector(".transcript-pane");
 
         /* ── Loading / error banners ─────────────────────────────── */
         function showLoading() {
@@ -288,7 +306,7 @@
             : d.cover
               ? '<span class="head-art"><img src="'+esc(d.cover)+'" alt="'+esc(d.title)+' artwork" /></span>'
               : '<span class="head-art cover-ph" aria-hidden="true"></span>';
-          var badge = d.audio
+          var badge = (d.source==="scribe")
             ? '<span class="head-badge head-badge--scribe"><span class="badge-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Transcribed · Scribe</span>'
             : '<span class="head-badge"><img src="./assets/partners/musixmatch-icon.svg" alt="" aria-hidden="true" />Lyrics · Musixmatch</span>';
           head.innerHTML =
@@ -310,7 +328,8 @@
             html+='<div class="t-section"><div class="t-section-label">'+esc(sec.name)+'</div>';
             sec.lines.forEach(function(ln) {
               var i=idx++;
-              html+='<button class="bar" type="button" data-i="'+i+'"'+(typeof ln.t==="number"?' data-t="'+ln.t+'"':'')+'>'+
+              var lineId = ln.id || ("L"+i);
+              html+='<button class="bar" type="button" data-i="'+i+'" data-id="'+esc(lineId)+'"'+(typeof ln.t==="number"?' data-t="'+ln.t+'"':'')+'>'+
                 '<span class="bar-text">'+esc(ln.text)+'</span>'+
                 '<span class="bar-spin" aria-hidden="true"><span></span><span></span><span></span>decoding…</span>'+
                 '</button>';
@@ -331,15 +350,24 @@
         function renderOverview() {
           var d=DATA[state.lane];
           var tiles=d.metrics.map(function(m){
-            return '<div class="metric-tile"><div class="metric-top"><span class="metric-label">'+m.label+'</span><span class="metric-num">'+m.v+'</span></div><div class="metric-bar"><span style="width:'+m.v+'%"></span></div></div>';
+            var focused=(_metricFocus&&_metricFocus===m.key)?" is-focused":"";
+            var keyAttr=m.key?' data-key="'+esc(m.key)+'"':'';
+            return '<button type="button" class="metric-tile'+focused+'" tabindex="0"'+keyAttr+'>'+
+              '<div class="metric-top"><span class="metric-label">'+esc(m.label)+'</span><span class="metric-num">'+m.v+'</span></div>'+
+              '<div class="metric-bar"><span style="width:'+m.v+'%"></span></div>'+
+              '</button>';
           }).join("");
           overview.innerHTML=
             '<div class="overview-top">'+
               '<span class="overview-kicker">Track score</span>'+
               '<div class="overview-score"><span class="big-score">'+d.score+'</span><span class="score-of">/ 100</span></div>'+
-              '<p class="overview-note">Weighted across five technical metrics. Tap a bar to decode it.</p>'+
+              '<p class="overview-note">Weighted across five technical metrics. Tap a metric to spotlight it.</p>'+
             '</div>'+
             '<div class="metric-grid">'+tiles+'</div>';
+          /* Wire metric tile clicks */
+          Array.prototype.forEach.call(overview.querySelectorAll(".metric-tile[data-key]"),function(t){
+            t.addEventListener("click",function(){ setMetricFocus(t.getAttribute("data-key")); });
+          });
         }
 
         /* ── Bar select → API decode ─────────────────────────────── */
@@ -434,6 +462,7 @@
           document.body.classList.remove("is-decoding");
           scrim.hidden=true; barDecode.hidden=true; overview.classList.remove("is-dimmed");
           Array.prototype.forEach.call(scroll.querySelectorAll(".bar"),function(b){b.classList.remove("is-selected","is-thinking");});
+          setMetricFocus(null);
         }
         scrim.addEventListener("click",closeDecode);
 
@@ -503,8 +532,8 @@
         function renderDock() {
           var d=DATA[state.lane];
           state.total=durToSec(d.duration); TOTAL_SECONDS=state.total;
-          trackEl.setAttribute("aria-valuemax",state.total);
-          var isSpotify=!d.audio;
+          trackEl.setAttribute("aria-valuemax",state.total||1);
+          var isSpotify=!!d.spotifyId; /* drive from spotifyId, not audio flag */
           if(d.cover==="wave"){
             playerThumb.className="player-thumb player-thumb-wave";
             playerThumb.innerHTML=[38,72,52,88,60,34].map(function(h){return'<span style="--h:'+h+'%"></span>';}).join("");
@@ -514,7 +543,8 @@
           } else {
             playerThumb.className="player-thumb cover-ph"; playerThumb.innerHTML="";
           }
-          playerTitle.textContent=d.title; playerArtist.textContent=d.artist; playerTotalEl.textContent=d.duration;
+          playerTitle.textContent=d.title; playerArtist.textContent=d.artist;
+          playerTotalEl.textContent=d.duration||"0:00";
           playerSource.classList.toggle("is-local",!isSpotify);
           playerSourceLabel.textContent=isSpotify?"via Spotify":"Synced transcript";
           var showConnect=isSpotify&&!state.connected;
@@ -527,14 +557,21 @@
           playBtn.setAttribute("aria-label",state.playing?"Pause":"Play");
         }
 
-        function showPlayerError(res){
-          var msg=res.nonPremium
-            ?"Spotify Premium required for in-app playback."
-            :res.noDevice
-              ?"No active Spotify device — open the Spotify app then tap play."
-              :"Couldn't start playback — open Spotify and try again.";
-          playerNote.textContent=msg; playerNote.hidden=false;
-          setTimeout(function(){playerNote.hidden=true;},5000);
+        function showPlayerError(res, spotifyId){
+          if(res.noDevice){
+            /* Persistent — user must open Spotify before retrying */
+            playerNote.innerHTML='No active Spotify device — <a href="spotify:" style="color:inherit;text-decoration:underline">open Spotify</a>, then tap play.';
+            playerNote.hidden=false;
+          } else if(res.nonPremium){
+            playerNote.textContent="Spotify Premium needed — opening track in Spotify…";
+            playerNote.hidden=false;
+            if(spotifyId) window.open("https://open.spotify.com/track/"+encodeURIComponent(spotifyId),"_blank");
+            setTimeout(function(){playerNote.hidden=true;},5000);
+          } else {
+            playerNote.textContent="Couldn't start playback — open Spotify and try again.";
+            playerNote.hidden=false;
+            setTimeout(function(){playerNote.hidden=true;},5000);
+          }
         }
         /* Spotify connect → OAuth */
         spotifyConnect.addEventListener("click",function(){
@@ -546,7 +583,7 @@
         playBtn.addEventListener("click",function(e){
           e.stopImmediatePropagation();
           var d=DATA[state.lane];
-          if(state.connected&&d&&!d.audio&&d.spotifyId){
+          if(state.connected&&d&&d.spotifyId){
             _ignorePlayStateUntil=Date.now()+3000;
             if(state.playing){
               _spBase=state.cur;
@@ -566,11 +603,12 @@
                 if(res.ok){
                   _spBase=state.cur; _spAt=Date.now();
                   state.playing=true;
+                  playerNote.hidden=true;
                   playBtn.classList.add("is-playing");
                   playBtn.setAttribute("aria-label","Pause");
                   playBtn.querySelector("span").className="ico-pause";
                 } else {
-                  showPlayerError(res);
+                  showPlayerError(res, d.spotifyId);
                 }
               })
               .catch(function(){});
@@ -584,9 +622,14 @@
           if(state.timer){clearInterval(state.timer);state.timer=null;}
           state.playing=false;state.cur=0;state.selected=null;state.connected=false;state.token++;
           closeDecode(); _lastKaraokeEl=null;
+          /* Reset metric focus & rhyme controls */
+          if(_metricFocus){ document.body.classList.remove("is-metric-"+_metricFocus); _metricFocus=null; }
+          rhymesToggle.hidden=true; rhLegend.hidden=true;
+          transcriptPane.classList.remove("rhymes-off");
           var d=DATA[state.lane];
           document.body.classList.toggle("lane-audio",!!d.audio);
-          hint.textContent=d.audio?"Press play, or tap any bar to decode":"Connect to play, or tap any bar to decode";
+          var isLive=(d.source==="musixmatch");
+          hint.textContent=isLive?"Connect to play, or tap any bar to decode":(d.audio?"Press play, or tap any bar to decode":"Tap any bar to decode");
           renderHead();renderTranscript();renderOverview();renderDock();
           window.scrollTo(0,0);
         }
@@ -606,36 +649,35 @@
           }
           showLoading();
 
-          /* Render track immediately; score patches in when ready */
+          /* Render track immediately; real score + rhymes patch in via /api/score */
           fetch("/api/track/"+encodeURIComponent(trackId))
             .then(function(r){return r.ok?r.json():Promise.reject();})
             .then(function(d){
+              /* Assign stable L0/L1… ids to each line for offset alignment */
+              var lineIdx=0;
+              var sections=(d.sections||[]).map(function(sec){
+                return {name:sec.name,lines:(sec.lines||[]).map(function(ln){
+                  return {id:"L"+(lineIdx++),text:ln.text,t:ln.t};
+                })};
+              });
               DATA.starlight={
                 id:d.id, title:d.title, artist:d.artist,
                 duration:d.durationSec?fmt(d.durationSec):"0:00",
-                score:0, cover:d.coverUrl||null, audio:false, feat:0,
-                spotifyId:d.spotifyId||null, metrics:[], sections:d.sections
+                score:0, cover:d.coverUrl||null, audio:!!d.synced, feat:0,
+                source:"musixmatch", synced:!!d.synced,
+                spotifyId:d.spotifyId||null, metrics:[], sections:sections
               };
               renderLane();
               checkSpotifyOnLoad();
+              fetchLiveScore(); /* POST displayed lines → real score + rhyme spans */
             })
             .catch(function(){ showError("Couldn't load track — go back and try another."); });
-
-          fetch("/api/track/"+encodeURIComponent(trackId)+"/score")
-            .then(function(r){return r.ok?r.json():Promise.reject();})
-            .then(function(s){
-              if(!DATA.starlight) return;
-              DATA.starlight.score=(s&&s.score)||0;
-              DATA.starlight.metrics=(s&&s.metrics||[]).map(function(m){return{label:m.label,v:m.value};});
-              renderHead(); renderOverview();
-            })
-            .catch(function(){});
         }
 
         /* ── Check Spotify connection on page load (after OAuth return) ── */
         function checkSpotifyOnLoad() {
           var d=DATA.starlight;
-          if(!d||d.audio) return;
+          if(!d||!d.spotifyId) return;
           fetch("/api/spotify/now")
             .then(function(r){return r.ok?r.json():Promise.reject();})
             .then(function(sp){
@@ -648,27 +690,35 @@
                 _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
                 if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
               } else if(d.spotifyId){
-                /* Auto-play whenever we're not already on this track */
-                fetch("/api/spotify/play",{
-                  method:"PUT",headers:{"Content-Type":"application/json"},
-                  body:JSON.stringify({spotifyId:d.spotifyId})
-                })
-                .then(function(r){return r.ok?r.json():Promise.reject();})
-                .then(function(res){
-                  if(res.ok){
-                    state.playing=true; _spAt=Date.now();
-                    playBtn.classList.add("is-playing");
-                    playBtn.setAttribute("aria-label","Pause");
-                    playBtn.querySelector("span").className="ico-pause";
-                  } else {
-                    showPlayerError(res);
-                  }
-                }).catch(function(){});
+                /* Auto-play — retry once after 1.5s if device not ready yet */
+                _tryAutoPlay(d.spotifyId, 0);
               }
               renderDock();
               startKaraokeSync();
             })
             .catch(function(){});
+        }
+
+        function _tryAutoPlay(spotifyId, attempt) {
+          fetch("/api/spotify/play",{
+            method:"PUT",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({spotifyId:spotifyId})
+          })
+          .then(function(r){return r.ok?r.json():Promise.reject();})
+          .then(function(res){
+            if(res.ok){
+              state.playing=true; _spAt=Date.now();
+              playerNote.hidden=true;
+              playBtn.classList.add("is-playing");
+              playBtn.setAttribute("aria-label","Pause");
+              playBtn.querySelector("span").className="ico-pause";
+            } else if(res.noDevice&&attempt<1){
+              /* Spotify app may need a moment after OAuth redirect — retry once */
+              setTimeout(function(){ _tryAutoPlay(spotifyId,1); },1500);
+            } else {
+              showPlayerError(res, spotifyId);
+            }
+          }).catch(function(){});
         }
 
         /* ── Karaoke sync: smooth interpolation + 2s Spotify ground-truth poll ── */
@@ -732,7 +782,8 @@
           scTrack.textContent=d.title; scArtist.textContent=d.artist;
           scCover.innerHTML=d.cover==="wave"
             ?'<span class="sc-wave">'+[42,74,54,90,62].map(function(h){return'<span style="--h:'+h+'%"></span>';}).join("")+'</span>'
-            :d.cover?'<img src="'+esc(d.cover)+'" alt="" />':'';
+            :d.cover?'<img src="'+esc(d.cover)+'" alt="" />'
+            :'<span class="sc-cover-ph">'+esc((d.artist||"?").charAt(0).toUpperCase())+'</span>';
           var len=ln.text.length;
           shareCard.style.setProperty("--hero",len>48?"6.8cqw":len>34?"7.8cqw":"9cqw");
         }
@@ -761,6 +812,87 @@
         document.getElementById("saDownload").addEventListener("click",function(){flash(this,"Preparing…");});
         document.getElementById("saX").addEventListener("click",function(){flash(this,"Opening X…");});
         document.getElementById("saIg").addEventListener("click",function(){flash(this,"Opening…");});
+
+        /* ── Metric focus ────────────────────────────────────────── */
+        function setMetricFocus(key) {
+          if(_metricFocus){
+            document.body.classList.remove("is-metric-"+_metricFocus);
+            var old=overview.querySelector(".metric-tile[data-key='"+_metricFocus+"']");
+            if(old) old.classList.remove("is-focused");
+          }
+          _metricFocus=(key&&key!==_metricFocus)?key:null;
+          if(_metricFocus){
+            document.body.classList.add("is-metric-"+_metricFocus);
+            var tile=overview.querySelector(".metric-tile[data-key='"+_metricFocus+"']");
+            if(tile) tile.classList.add("is-focused");
+          }
+        }
+
+        /* ── Rhyme application ───────────────────────────────────── */
+        function applyRhymesToBar(el, text, spans) {
+          spans=spans.filter(function(s){ return s.end>s.start&&s.start>=0&&s.end<=text.length; });
+          spans.sort(function(a,b){ return a.start-b.start; });
+          var merged=[]; var end=-1;
+          spans.forEach(function(s){ if(s.start>=end){ merged.push(s); end=s.end; } });
+          var html=""; var pos=0;
+          merged.forEach(function(s){
+            if(s.start>pos) html+=esc(text.slice(pos,s.start));
+            html+='<mark class="rh rh-'+esc(s.type)+' rh-g'+(s.group%6)+'">'+esc(text.slice(s.start,s.end))+'</mark>';
+            pos=s.end;
+          });
+          if(pos<text.length) html+=esc(text.slice(pos));
+          var bt=el.querySelector(".bar-text");
+          if(bt) bt.innerHTML=html;
+        }
+
+        function applyAllRhymes(rhymes) {
+          var byLine={};
+          (rhymes||[]).forEach(function(r){
+            if(!byLine[r.lineId]) byLine[r.lineId]=[];
+            byLine[r.lineId].push(r);
+          });
+          var textFor={};
+          (_liveLines||[]).forEach(function(ln){ textFor[ln.id]=ln.text; });
+          Array.prototype.forEach.call(scroll.querySelectorAll(".bar[data-id]"),function(bar){
+            var id=bar.getAttribute("data-id");
+            if(byLine[id]&&textFor[id]) applyRhymesToBar(bar,textFor[id],byLine[id]);
+          });
+        }
+
+        /* ── Fetch live score from /api/score ────────────────────── */
+        function fetchLiveScore() {
+          var d=DATA.starlight; if(!d) return;
+          _liveLines=flatLines().map(function(ln){ return {id:ln.id,text:ln.text}; });
+          if(!_liveLines.length) return;
+          fetch("/api/score",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({lines:_liveLines})
+          })
+          .then(function(r){ return r.ok?r.json():Promise.reject(); })
+          .then(function(res){
+            d.score=res.score||0;
+            d.metrics=res.metrics||[];
+            renderHead();
+            renderOverview();
+            applyAllRhymes(res.rhymes||[]);
+            if((res.rhymes||[]).length){
+              rhymesToggle.hidden=false;
+              rhLegend.hidden=false;
+            }
+          })
+          .catch(function(){});
+        }
+
+        /* ── Rhymes toggle ───────────────────────────────────────── */
+        rhymesToggle.addEventListener("click",function(){
+          _rhymesOn=!_rhymesOn;
+          rhymesToggle.classList.toggle("is-on",_rhymesOn);
+          transcriptPane.classList.toggle("rhymes-off",!_rhymesOn);
+          rhLegend.hidden=!_rhymesOn;
+        });
+
+        /* ── Show lane switch if no catalog track ────────────────── */
+        if(!trackId) laneSwitch.hidden=false;
 
         /* ── Init ────────────────────────────────────────────────── */
         setLane("starlight");
