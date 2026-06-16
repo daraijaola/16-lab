@@ -3,12 +3,26 @@
 Served under /api on the same origin as the static front end.
 """
 
-from fastapi import FastAPI, HTTPException, Request, Response
+import os
+from pathlib import Path
+
+from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
-from . import config, decode, depth, llm, mock, musixmatch, scoring, spotify
+from . import (
+    config,
+    decode,
+    depth,
+    jobs,
+    llm,
+    mock,
+    musixmatch,
+    pipeline,
+    scoring,
+    spotify,
+)
 
 app = FastAPI(title="16 Lab API", version="0.2.0")
 
@@ -224,6 +238,93 @@ def depth_score(req: DepthRequest):
         raise HTTPException(400, str(exc))
     except llm.LLMError as exc:
         raise HTTPException(502, str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Upload pipeline — Scribe → correction → Musixmatch match → freestyle decode.
+# Async job; FE polls /upload/{jobId} then loads /upload/{jobId}/result into the
+# existing decode view. The stored audio (the user's own file) is streamed back
+# for the karaoke player. We store our pipeline outputs only — never lyric content.
+# ---------------------------------------------------------------------------
+
+_UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads"
+_MAX_BYTES = 20 * 1024 * 1024  # ~20MB
+_AUDIO_EXT = {"mp3", "wav", "m4a", "aac", "ogg", "flac", "webm", "mp4"}
+_MIME = {
+    "mp3": "audio/mpeg", "wav": "audio/wav", "m4a": "audio/mp4",
+    "aac": "audio/aac", "ogg": "audio/ogg", "flac": "audio/flac",
+    "webm": "audio/webm", "mp4": "audio/mp4",
+}
+
+
+@api.post("/upload")
+async def upload(file: UploadFile = File(...)):
+    ctype = file.content_type or ""
+    ext = os.path.splitext(file.filename or "")[1].lower().lstrip(".")
+    if not (ctype.startswith("audio/") or ext in _AUDIO_EXT):
+        raise HTTPException(415, "Upload an audio file (MP3, WAV, M4A…).")
+    if ext not in _AUDIO_EXT:
+        ext = "mp3"
+
+    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    jid = jobs.create(ext)
+    dest = _UPLOAD_DIR / f"{jid}.{ext}"
+    size = 0
+    try:
+        with open(dest, "wb") as out:
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > _MAX_BYTES:
+                    out.close()
+                    dest.unlink(missing_ok=True)
+                    jobs.set_error(jid, "File too large (max 20MB).")
+                    raise HTTPException(413, "File too large (max 20MB).")
+                out.write(chunk)
+    finally:
+        await file.close()
+
+    pipeline.start(jid, str(dest))
+    return {"jobId": jid}
+
+
+@api.get("/upload/{job_id}")
+def upload_status(job_id: str):
+    j = jobs.get(job_id)
+    if not j:
+        raise HTTPException(404, "unknown job")
+    out = {"jobId": job_id, "stage": j["stage"]}
+    if j.get("error"):
+        out["error"] = j["error"]
+    if j.get("result"):
+        out["matched"] = j["result"].get("matched")
+    return out
+
+
+@api.get("/upload/{job_id}/result")
+def upload_result(job_id: str):
+    j = jobs.get(job_id)
+    if not j:
+        raise HTTPException(404, "unknown job")
+    if j["stage"] == "error":
+        raise HTTPException(500, j.get("error") or "pipeline error")
+    if j["stage"] != "done" or not j.get("result"):
+        raise HTTPException(409, "not ready")
+    return j["result"]
+
+
+@api.get("/upload/{job_id}/audio")
+def upload_audio(job_id: str):
+    j = jobs.get(job_id)
+    if not j:
+        raise HTTPException(404, "unknown job")
+    ext = j.get("ext", "mp3")
+    path = _UPLOAD_DIR / f"{job_id}.{ext}"
+    if not path.exists():
+        raise HTTPException(404, "audio not found")
+    return FileResponse(str(path), media_type=_MIME.get(ext, "application/octet-stream"))
 
 
 app.mount("/api", api)

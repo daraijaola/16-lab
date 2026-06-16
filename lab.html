@@ -69,9 +69,10 @@
               </span>
               <div class="drop-copy">
                 <strong>or drop a freestyle</strong>
-                <p>MP3, WAV, M4A &middot; up to 10 min</p>
+                <p>MP3, WAV, M4A &middot; up to 20MB / ~2 min</p>
               </div>
               <span class="drop-browse">Browse files</span>
+              <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm" hidden />
             </div>
           </div>
         </section>
@@ -145,6 +146,24 @@
       </main>
     </div>
 
+    <!-- Upload pipeline overlay — chips light up as the job advances -->
+    <div class="pipe-overlay" id="pipeOverlay" hidden>
+      <div class="pipe-card" role="status" aria-live="polite">
+        <div class="pipe-thumb" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <h2 class="pipe-title">Decoding your freestyle</h2>
+        <p class="pipe-sub" id="pipeSub">Uploading audio…</p>
+        <ol class="pipe-chips" id="pipeChips">
+          <li data-stage="uploaded">Uploaded</li>
+          <li data-stage="transcribing">Transcribing</li>
+          <li data-stage="correcting">Correcting slang</li>
+          <li data-stage="matching">Matching catalog</li>
+          <li data-stage="done">Decoded</li>
+        </ol>
+        <p class="pipe-error" id="pipeError" hidden></p>
+        <button type="button" class="pipe-cancel" id="pipeCancel" hidden>Try another file</button>
+      </div>
+    </div>
+
     <script>
       (function () {
         var form = document.getElementById("searchForm");
@@ -167,6 +186,7 @@
         });
 
         var drop = document.getElementById("dropzone");
+        var fileInput = document.getElementById("fileInput");
         ["dragenter", "dragover"].forEach(function (evt) {
           drop.addEventListener(evt, function (e) {
             e.preventDefault();
@@ -179,11 +199,87 @@
             drop.classList.remove("is-dragover");
           });
         });
+        drop.addEventListener("drop", function (e) {
+          var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (f) uploadFile(f);
+        });
+        drop.addEventListener("click", function () { fileInput.click(); });
+        drop.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+        });
+        fileInput.addEventListener("change", function () {
+          if (fileInput.files && fileInput.files[0]) uploadFile(fileInput.files[0]);
+        });
+
+        /* ── Upload pipeline ──────────────────────────────────────── */
+        var AUDIO_RE = /\.(mp3|wav|m4a|aac|ogg|flac|webm|mp4)$/i;
+        var STAGE_ORDER = ["uploaded", "transcribing", "correcting", "matching", "done"];
+        var STAGE_SUB = {
+          uploaded: "Audio uploaded — starting…",
+          transcribing: "Transcribing with word-level timing…",
+          correcting: "Cleaning up slang & mishears…",
+          matching: "Checking if any platform has these lyrics…",
+          done: "Done — opening your decode…"
+        };
+        var overlay = document.getElementById("pipeOverlay");
+        var chips = document.getElementById("pipeChips");
+        var pipeSub = document.getElementById("pipeSub");
+        var pipeError = document.getElementById("pipeError");
+        var pipeCancel = document.getElementById("pipeCancel");
+
+        function setStage(stage) {
+          var idx = STAGE_ORDER.indexOf(stage);
+          Array.prototype.forEach.call(chips.children, function (li, i) {
+            li.classList.toggle("is-done", idx > i);
+            li.classList.toggle("is-active", idx === i);
+          });
+          if (STAGE_SUB[stage]) pipeSub.textContent = STAGE_SUB[stage];
+        }
+        function pipeFail(msg) {
+          pipeError.textContent = msg || "Something went wrong — try another file.";
+          pipeError.hidden = false;
+          pipeCancel.hidden = false;
+          pipeSub.textContent = "Upload failed";
+        }
+        pipeCancel.addEventListener("click", function () {
+          overlay.hidden = true; pipeError.hidden = true; pipeCancel.hidden = true;
+          fileInput.value = "";
+        });
+
+        function uploadFile(file) {
+          if (!file) return;
+          var okType = (file.type && file.type.indexOf("audio") === 0) || AUDIO_RE.test(file.name);
+          if (!okType) { alert("Please choose an audio file (MP3, WAV, M4A…)."); return; }
+          overlay.hidden = false; pipeError.hidden = true; pipeCancel.hidden = true;
+          setStage("uploaded"); pipeSub.textContent = "Uploading audio…";
+          if (file.size > 20 * 1024 * 1024) { pipeFail("File too large (max 20MB)."); return; }
+          var fd = new FormData(); fd.append("file", file);
+          fetch("/api/upload", { method: "POST", body: fd })
+            .then(function (r) { return r.ok ? r.json() : r.json().then(function (j) { return Promise.reject(j.detail || "Upload failed."); }); })
+            .then(function (d) { pollJob(d.jobId); })
+            .catch(function (err) { pipeFail(typeof err === "string" ? err : "Upload failed — try again."); });
+        }
+        function pollJob(jobId) {
+          var iv = setInterval(function () {
+            fetch("/api/upload/" + encodeURIComponent(jobId))
+              .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+              .then(function (s) {
+                setStage(s.stage);
+                if (s.stage === "done") {
+                  clearInterval(iv);
+                  window.location.href = "./decode.html?upload=" + encodeURIComponent(jobId);
+                } else if (s.stage === "error") {
+                  clearInterval(iv); pipeFail(s.error);
+                }
+              })
+              .catch(function () {});
+          }, 1500);
+        }
 
         var emptySearch = document.querySelector(".empty-action-search");
         var emptyUpload = document.querySelector(".empty-action-upload");
         if (emptySearch) emptySearch.addEventListener("click", function () { input.focus(); });
-        if (emptyUpload) emptyUpload.addEventListener("click", function () { drop.focus(); });
+        if (emptyUpload) emptyUpload.addEventListener("click", function () { fileInput.click(); });
       })();
     </script>
   </body>
