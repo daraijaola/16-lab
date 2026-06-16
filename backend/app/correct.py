@@ -62,30 +62,42 @@ def _extract_array(text: str) -> list:
     return json.loads(text[start : end + 1])
 
 
-def correct_lines(lines: list[dict]) -> list[dict]:
-    """Return lines with corrected `text`, preserving id/t and exact count/order."""
-    if not lines or not config.llm_live():
-        return lines
+# Correct in bounded batches so a long (e.g. 7-min) transcript never overruns the
+# model's output budget — that would length-mismatch and silently skip correction.
+_BATCH = 40
 
-    numbered = "\n".join(f"{i}\t{ln['text']}" for i, ln in enumerate(lines))
+
+def _correct_batch(batch: list[dict]) -> list[dict]:
+    """Correct one batch; return it unchanged on any failure (best-effort)."""
+    numbered = "\n".join(f"{i}\t{ln['text']}" for i, ln in enumerate(batch))
     dictionary = ", ".join(SLANG_TERMS)
     user = (
         "UK-rap slang reference (spell these the slang way, do not standardise):\n"
         f"{dictionary}\n\n"
-        f"Transcript ({len(lines)} lines, index<TAB>text):\n{numbered}\n\n"
-        f"Return a JSON array of exactly {len(lines)} corrected strings, in order."
+        f"Transcript ({len(batch)} lines, index<TAB>text):\n{numbered}\n\n"
+        f"Return a JSON array of exactly {len(batch)} corrected strings, in order."
     )
-
     try:
         out = llm.messages(
-            system=SYSTEM, user=user, model=config.CORRECT_MODEL, max_tokens=2000
+            system=SYSTEM, user=user, model=config.CORRECT_MODEL, max_tokens=1600
         )
         arr = _extract_array(out["text"])
-        if isinstance(arr, list) and len(arr) == len(lines):
+        if isinstance(arr, list) and len(arr) == len(batch):
             return [
-                {**lines[i], "text": (str(arr[i]).strip() or lines[i]["text"])}
-                for i in range(len(lines))
+                {**batch[i], "text": (str(arr[i]).strip() or batch[i]["text"])}
+                for i in range(len(batch))
             ]
     except Exception:
-        pass  # best-effort: fall back to the raw transcript
-    return lines
+        pass
+    return batch
+
+
+def correct_lines(lines: list[dict]) -> list[dict]:
+    """Return lines with corrected `text`, preserving id/t and exact count/order.
+    Batched so length always matches even for long uploads."""
+    if not lines or not config.llm_live():
+        return lines
+    out: list[dict] = []
+    for i in range(0, len(lines), _BATCH):
+        out.extend(_correct_batch(lines[i : i + _BATCH]))
+    return out
