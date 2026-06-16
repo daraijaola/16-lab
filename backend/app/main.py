@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
-from . import config, decode, llm, mock, musixmatch, scoring, spotify
+from . import config, decode, depth, llm, mock, musixmatch, scoring, spotify
 
 app = FastAPI(title="16 Lab API", version="0.2.0")
 
@@ -199,6 +199,31 @@ def score_lines(req: ScoreRequest):
     if not req.lines:
         raise HTTPException(400, "lines required")
     return scoring.score_track(req.lines)
+
+
+# ---------------------------------------------------------------------------
+# Depth — AI-judged lyricism axis, cached for consistency.
+# Same track -> same number on every load (cache hit = no model call). We store
+# only our derived output keyed on a lyrics hash; never the lyric text itself.
+# ---------------------------------------------------------------------------
+
+class DepthRequest(BaseModel):
+    trackId: str
+    lines: list[str]
+    track: TrackMeta | None = None
+
+
+@api.post("/depth")
+def depth_score(req: DepthRequest):
+    if not req.trackId or not req.lines:
+        raise HTTPException(400, "trackId and lines required")
+    try:
+        meta = req.track.model_dump() if req.track else None
+        return depth.depth_for(req.trackId, req.lines, meta)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except llm.LLMError as exc:
+        raise HTTPException(502, str(exc))
 
 
 app.mount("/api", api)
