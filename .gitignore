@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .venv/
 backend/.env
+
+# Depth cache: our derived scores keyed by lyrics hash — never lyric text.
+backend/data/

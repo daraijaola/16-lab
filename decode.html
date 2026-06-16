@@ -264,6 +264,7 @@
         var _rhymesOn = true;
         var _metricFocus = null;
         var _liveLines = null; /* [{id,text}] for current live track */
+        var _depthOpen = false; /* Depth sub-scores expanded? */
 
         /* ── Elements ────────────────────────────────────────────── */
         var head     = document.getElementById("decodeHead");
@@ -316,9 +317,33 @@
               '<div class="head-facts"><span>'+d.duration+'</span>'+badge+'</div>'+
             '</div>'+
             '<div class="head-aside">'+
-              '<div class="pen-score" title="Pen score"><span class="pen-glyph" aria-hidden="true"></span><span class="pen-num">'+d.score+'</span><span class="pen-cap">Pen score</span></div>'+
+              '<div class="score-pair">'+
+                '<div class="score-dial score-dial--tech" title="Technical · craft — deterministic rhyme &amp; flow analysis">'+
+                  '<span class="score-dial-num">'+d.score+'</span>'+
+                  '<span class="score-dial-cap">Technical · craft</span>'+
+                '</div>'+
+                depthDialHTML(d)+
+              '</div>'+
               '<button class="share-btn" type="button"><span class="share-ico" aria-hidden="true"></span>Share card</button>'+
             '</div>';
+        }
+
+        /* Header Depth dial: real number, a shimmer while computing, or nothing
+           when Depth is unavailable (live lane only ever sets these). */
+        function depthDialHTML(d) {
+          if (typeof d.depthScore === "number") {
+            return '<div class="score-dial score-dial--depth" title="Depth · lyricism — AI-judged meaning &amp; craft">'+
+              '<span class="score-dial-num">'+d.depthScore+'</span>'+
+              '<span class="score-dial-cap">Depth · lyricism</span>'+
+            '</div>';
+          }
+          if (d.depthPending) {
+            return '<div class="score-dial score-dial--depth is-pending" title="Scoring lyricism…">'+
+              '<span class="score-dial-shimmer" aria-hidden="true"></span>'+
+              '<span class="score-dial-cap">Depth · lyricism</span>'+
+            '</div>';
+          }
+          return '';
         }
 
         /* ── Render: transcript ──────────────────────────────────── */
@@ -353,21 +378,60 @@
             var focused=(_metricFocus&&_metricFocus===m.key)?" is-focused":"";
             var keyAttr=m.key?' data-key="'+esc(m.key)+'"':'';
             return '<button type="button" class="metric-tile'+focused+'" tabindex="0"'+keyAttr+'>'+
-              '<div class="metric-top"><span class="metric-label">'+esc(m.label)+'</span><span class="metric-num">'+m.v+'</span></div>'+
-              '<div class="metric-bar"><span style="width:'+m.v+'%"></span></div>'+
+              '<div class="metric-top"><span class="metric-label">'+esc(m.label)+'</span><span class="metric-num">'+m.value+'</span></div>'+
+              '<div class="metric-bar"><span style="width:'+m.value+'%"></span></div>'+
               '</button>';
           }).join("");
           overview.innerHTML=
             '<div class="overview-top">'+
-              '<span class="overview-kicker">Track score</span>'+
+              '<span class="overview-kicker">Technical · craft</span>'+
               '<div class="overview-score"><span class="big-score">'+d.score+'</span><span class="score-of">/ 100</span></div>'+
-              '<p class="overview-note">Weighted across five technical metrics. Tap a metric to spotlight it.</p>'+
+              '<p class="overview-note">Deterministic — weighted across five rhyme &amp; flow metrics. Tap a metric to spotlight it.</p>'+
             '</div>'+
-            '<div class="metric-grid">'+tiles+'</div>';
+            '<div class="metric-grid">'+tiles+'</div>'+
+            depthTileHTML(d);
           /* Wire metric tile clicks */
           Array.prototype.forEach.call(overview.querySelectorAll(".metric-tile[data-key]"),function(t){
             t.addEventListener("click",function(){ setMetricFocus(t.getAttribute("data-key")); });
           });
+          /* Wire Depth expand toggle */
+          var dToggle=overview.querySelector(".depth-tile-toggle");
+          if(dToggle) dToggle.addEventListener("click",function(){
+            _depthOpen=!_depthOpen; renderOverview();
+          });
+        }
+
+        /* Overview Depth tile: AI lyricism score, expandable to six sub-scores +
+           rationale. Shows a shimmer on a cache MISS while the model computes;
+           hits return instantly so no spinner. Hidden when Depth is unavailable. */
+        function depthTileHTML(d) {
+          if (d.depthPending) {
+            return '<div class="depth-tile is-pending">'+
+              '<div class="depth-tile-toprow">'+
+                '<span class="depth-tile-kicker">Depth · lyricism</span>'+
+                '<span class="depth-scoring"><span class="depth-shimmer" aria-hidden="true"></span>scoring lyricism…</span>'+
+              '</div>'+
+            '</div>';
+          }
+          if (typeof d.depthScore !== "number") return "";
+          var sub=(d.depthSub||[]).map(function(m){
+            return '<div class="metric-tile metric-tile--depth">'+
+              '<div class="metric-top"><span class="metric-label">'+esc(m.label)+'</span><span class="metric-num">'+m.value+'</span></div>'+
+              '<div class="metric-bar metric-bar--depth"><span style="width:'+m.value+'%"></span></div>'+
+            '</div>';
+          }).join("");
+          var open=_depthOpen?" is-open":"";
+          return '<div class="depth-tile'+open+'">'+
+            '<button type="button" class="depth-tile-toggle" aria-expanded="'+(_depthOpen?"true":"false")+'">'+
+              '<span class="depth-tile-kicker">Depth · lyricism</span>'+
+              '<span class="depth-tile-score">'+d.depthScore+'<span class="depth-tile-of">/ 100</span></span>'+
+              '<span class="depth-tile-chevron" aria-hidden="true"></span>'+
+            '</button>'+
+            '<div class="depth-tile-body">'+
+              (d.depthRationale?'<p class="depth-rationale">“'+esc(d.depthRationale)+'”</p>':'')+
+              '<div class="metric-grid depth-grid">'+sub+'</div>'+
+            '</div>'+
+          '</div>';
         }
 
         /* ── Bar select → API decode ─────────────────────────────── */
@@ -388,7 +452,7 @@
           var d=DATA[state.lane];
           var allText=lines.map(function(l){return l.text;});
 
-          if (!d.audio) {
+          if (d.source==="musixmatch") {
             /* Catalog lane → live API */
             fetch("/api/decode/bar",{
               method:"POST",
@@ -670,6 +734,7 @@
               renderLane();
               checkSpotifyOnLoad();
               fetchLiveScore(); /* POST displayed lines → real score + rhyme spans */
+              fetchDepth();     /* parallel: AI lyricism score (cached for consistency) */
             })
             .catch(function(){ showError("Couldn't load track — go back and try another."); });
         }
@@ -881,6 +946,34 @@
             }
           })
           .catch(function(){});
+        }
+
+        /* ── Fetch Depth score from /api/depth (live lane only) ──────
+           Sibling of fetchLiveScore(); fires in parallel. The backend caches
+           by lyrics hash, so the same track returns an IDENTICAL number every
+           load. On any failure we just hide the Depth tile — never break the
+           page; Technical + rhymes already rendered from /api/score. */
+        function fetchDepth() {
+          var d=DATA.starlight;
+          if(!d||d.source!=="musixmatch") return; /* live mode only */
+          var src=_liveLines||flatLines().map(function(ln){return {id:ln.id,text:ln.text};});
+          var texts=src.map(function(l){return l.text;});
+          if(!texts.length) return;
+          d.depthPending=true;
+          renderHead(); renderOverview();
+          fetch("/api/depth",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({trackId:trackId,lines:texts,track:{title:d.title,artist:d.artist}})
+          })
+          .then(function(r){ return r.ok?r.json():Promise.reject(); })
+          .then(function(res){
+            d.depthPending=false;
+            d.depthScore=res.depth;
+            d.depthSub=res.sub||[];
+            d.depthRationale=res.rationale||"";
+            renderHead(); renderOverview();
+          })
+          .catch(function(){ d.depthPending=false; renderHead(); renderOverview(); });
         }
 
         /* ── Rhymes toggle ───────────────────────────────────────── */
