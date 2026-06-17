@@ -97,8 +97,12 @@ def score_track(lines: list[dict]) -> dict:
                 rhyming_words += 1
                 if multi:
                     multi_rhyming += 1
-                # type: end rhyme if it's the line-final word, else internal
-                is_end = (word, start, end, key, multi) is toks[-1]
+                # type: end rhyme if it's the line-final word, else internal.
+                # Compare by VALUE (==), not identity (is): a freshly-built tuple
+                # is never `is` the stored one, so `is` was always False and end
+                # rhymes were mislabelled "internal". Char offsets are unique per
+                # token, so == matches only the true line-final token.
+                is_end = (word, start, end, key, multi) == toks[-1]
                 rtype = "multi" if multi else ("end" if is_end else "internal")
                 rhymes.append(
                     {
