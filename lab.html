@@ -12,7 +12,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./lab.css" />
+    <link rel="stylesheet" href="./lab.css?v=202606172150" />
   </head>
   <body>
     <div class="lab-shell" data-screen-label="Overview">
@@ -229,10 +229,15 @@
             .catch(function (err) { pipeFail(typeof err === "string" ? err : "Upload failed — try again."); });
         }
         function pollJob(jobId) {
+          /* Cap consecutive failures so a vanished job / backend hiccup surfaces
+             an error instead of spinning on "Transcribing…" forever. A good poll
+             resets the counter, so a long (7-min) transcription never trips it. */
+          var fails = 0;
           var iv = setInterval(function () {
             fetch("/api/upload/" + encodeURIComponent(jobId))
               .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
               .then(function (s) {
+                fails = 0;
                 setStage(s.stage);
                 if (s.stage === "done") {
                   clearInterval(iv);
@@ -241,7 +246,9 @@
                   clearInterval(iv); pipeFail(s.error);
                 }
               })
-              .catch(function () {});
+              .catch(function () {
+                if (++fails >= 8) { clearInterval(iv); pipeFail("Lost connection to the upload — check your network and try again."); }
+              });
           }, 1500);
         }
 

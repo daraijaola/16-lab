@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
 from . import (
+    compare,
     config,
     decode,
     depth,
@@ -232,6 +233,30 @@ def depth_score(req: DepthRequest):
         raise HTTPException(400, str(exc))
     except llm.LLMError as exc:
         raise HTTPException(502, str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Compare — short AI verdict on which of two songs is the deeper write, grounded
+# in their Depth sub-scores. Sends ONLY our derived scores + public metadata,
+# never lyric content. Never 500s: falls back to a deterministic verdict.
+# ---------------------------------------------------------------------------
+
+class CompareSide(BaseModel):
+    title: str | None = None
+    artist: str | None = None
+    depth: int | None = None
+    depthSub: list[dict] | None = None
+    depthRationale: str | None = None
+
+
+class CompareRequest(BaseModel):
+    a: CompareSide
+    b: CompareSide
+
+
+@api.post("/compare")
+def compare_tracks(req: CompareRequest):
+    return compare.compare(req.a.model_dump(), req.b.model_dump())
 
 
 # ---------------------------------------------------------------------------

@@ -10,3 +10,6 @@ backend/data/
 # Uploaded freestyle audio + async job store (our pipeline I/O; never commit)
 uploads/
 backend/data/jobs.json
+
+# editing backups
+*.bak-*

@@ -12,7 +12,9 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./lab.css" />
+    <link rel="stylesheet" href="./lab.css?v=202606172150" />
+    <!-- Share card -> PNG (snapshot the styled card for download / native share) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   </head>
   <body class="decode-body-page">
     <div class="lab-shell" data-screen-label="Decode">
@@ -203,15 +205,16 @@
                 </span>
                 <span class="sa-lbl">Share to X</span>
               </button>
-              <button class="sa-btn" id="saIg" type="button" aria-label="Share to Instagram">
+              <button class="sa-btn" id="saShare" type="button" aria-label="Share image to any app">
                 <span class="sa-ico" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2.5" y="2.5" width="19" height="19" rx="5.4" />
-                    <circle cx="12" cy="12" r="4.6" />
-                    <circle cx="17.4" cy="6.6" r="1.25" fill="currentColor" stroke="none" />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
                   </svg>
                 </span>
-                <span class="sa-lbl">Instagram</span>
+                <span class="sa-lbl">Share</span>
               </button>
             </div>
           </div>
@@ -967,6 +970,8 @@
         function paintShare(){
           var d=DATA[state.lane]; var ln=featuredLine();
           var meaning=(state.lastDecode&&state.lastDecode.text===ln.text&&state.lastDecode.meaning)||ln.text;
+          /* Cap the explanation so it can't overrun the fixed card (CSS also clamps). */
+          if(meaning.length>200) meaning=meaning.slice(0,199).replace(/\s+\S*$/,"")+"…";
           scScore.textContent=d.score; scQuote.textContent=ln.text; scDecode.textContent=meaning;
           scTrack.textContent=d.title; scArtist.textContent=d.artist;
           scCover.innerHTML=d.cover==="wave"
@@ -998,9 +1003,76 @@
           if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(window.location.href).catch(function(){});
           flash(this,"Link copied");
         });
-        document.getElementById("saDownload").addEventListener("click",function(){flash(this,"Preparing…");});
-        document.getElementById("saX").addEventListener("click",function(){flash(this,"Opening X…");});
-        document.getElementById("saIg").addEventListener("click",function(){flash(this,"Opening…");});
+        /* ── Real PNG export + native share ──────────────────────────
+           Rasterize the styled card with html2canvas. Cross-origin cover art
+           can taint the canvas; if export throws we retry once with the cover
+           swapped for its placeholder, then restore the original. */
+        function _cardFilename(){
+          var d=DATA[state.lane]||{};
+          var slug=String(d.title||"decode").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
+          return "16lab-"+(slug||"decode")+".png";
+        }
+        function _snapshot(){
+          if(typeof html2canvas!=="function") return Promise.reject(new Error("renderer not ready"));
+          return html2canvas(shareCard,{scale:Math.min(3,(window.devicePixelRatio||1)*2),useCORS:true,backgroundColor:null,logging:false})
+            .then(function(canvas){
+              return new Promise(function(res,rej){
+                canvas.toBlob(function(b){ b?res(b):rej(new Error("export failed")); },"image/png");
+              });
+            });
+        }
+        function _snapshotSafe(){
+          return _snapshot().catch(function(err){
+            var img=scCover.querySelector("img"); if(!img) throw err; /* not an image-taint issue */
+            var saved=scCover.innerHTML;
+            scCover.innerHTML='<span class="sc-cover-ph">'+esc(((DATA[state.lane]||{}).artist||"?").charAt(0).toUpperCase())+'</span>';
+            return _snapshot().then(
+              function(b){ scCover.innerHTML=saved; return b; },
+              function(e){ scCover.innerHTML=saved; throw e; }
+            );
+          });
+        }
+        function _downloadBlob(blob){
+          var url=URL.createObjectURL(blob);
+          var a=document.createElement("a"); a.href=url; a.download=_cardFilename();
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function(){URL.revokeObjectURL(url);},4000);
+        }
+        function _withBtn(btn,working,run){
+          var lbl=btn.querySelector(".sa-lbl"); var prev=lbl?lbl.textContent:"";
+          if(lbl)lbl.textContent=working; btn.disabled=true;
+          run().then(function(done){ if(lbl)lbl.textContent=done||prev; })
+               .catch(function(e){ if(e&&e.name==="AbortError"){ if(lbl)lbl.textContent=prev; } else if(lbl)lbl.textContent="Couldn’t — retry"; })
+               .then(function(){ btn.disabled=false; setTimeout(function(){if(lbl)lbl.textContent=prev;},1800); });
+        }
+        document.getElementById("saDownload").addEventListener("click",function(){
+          var btn=this;
+          _withBtn(btn,"Rendering…",function(){
+            return _snapshotSafe().then(function(blob){ _downloadBlob(blob); return "Saved ✓"; });
+          });
+        });
+        /* Native share sheet = X, Instagram, WhatsApp, anything installed. Falls
+           back to a download when Web Share (with files) isn't available. */
+        document.getElementById("saShare").addEventListener("click",function(){
+          var btn=this;
+          _withBtn(btn,"Preparing…",function(){
+            return _snapshotSafe().then(function(blob){
+              var file=new File([blob],_cardFilename(),{type:"image/png"});
+              var text='“'+(featuredLine().text||"")+'” — decoded on 16 Lab';
+              if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+                return navigator.share({files:[file],title:"16 Lab decode",text:text}).then(function(){return "Shared ✓";});
+              }
+              _downloadBlob(blob); return "Saved — share it";
+            });
+          });
+        });
+        /* X has no web intent for image upload — open the composer with the bar + link. */
+        document.getElementById("saX").addEventListener("click",function(){
+          var text='“'+(featuredLine().text||"")+'” — decoded on 16 Lab';
+          var url="https://twitter.com/intent/tweet?text="+encodeURIComponent(text)+"&url="+encodeURIComponent(window.location.href);
+          window.open(url,"_blank","noopener");
+          flash(this,"Opening X…");
+        });
 
         /* ── Metric focus ────────────────────────────────────────── */
         function setMetricFocus(key) {
