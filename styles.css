@@ -748,7 +748,11 @@ h1 {
 .artists-section {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(320px, 0.78fr) minmax(520px, 1.22fr);
+  /* The 520px floor on the visual column forced the grid wider than the frame
+     between ~920px and ~1200px, pushing the artist frames off-screen right
+     (section is overflow:hidden). Frames are absolute + capped, so col2 can
+     flex down freely — same fix as .lyrics-demo. */
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
   gap: clamp(28px, 5vw, 72px);
   align-items: center;
   min-height: 92vh;
@@ -896,7 +900,9 @@ h1 {
 .upload-flow-section {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(340px, 0.72fr) minmax(0, 1.28fr);
+  /* Same rebalance as .lyrics-demo: give the headline column real room so the
+     search/upload mockup stops floating in a lopsided, mostly-empty layout. */
+  grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1.08fr);
   gap: clamp(30px, 5vw, 72px);
   align-items: center;
   min-height: 94vh;
@@ -1683,10 +1689,12 @@ h1 {
 .lyrics-demo {
   min-height: 92vh;
   display: grid;
-  /* was minmax(680px, …): that hard floor squeezed the heading column and
-     forced the grid wider than the frame. The demo cards are absolute + capped,
-     so the column can flex down freely. */
-  grid-template-columns: minmax(250px, 0.52fr) minmax(0, 1.48fr);
+  /* The 0.52fr heading column was far too thin for a clamp(…,76px) h2, so
+     "Tap the bar…" wrapped one word per line while the 1.48fr column sat mostly
+     empty around the absolute, width-capped demo cards. Rebalance toward the
+     ratio the (working) .artists-section uses so the heading has room and the
+     visual column isn't a giant void. */
+  grid-template-columns: minmax(360px, 0.95fr) minmax(0, 1.05fr);
   gap: clamp(24px, 3.2vw, 54px);
   align-items: center;
   padding: clamp(62px, 6.5vw, 92px) clamp(20px, 4vw, 56px);
@@ -2586,7 +2594,8 @@ h1 {
 .scores-section {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(320px, 0.78fr) minmax(520px, 1.22fr);
+  /* Same hard-floor overflow fix as .artists-section: col2 must shrink. */
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
   gap: clamp(28px, 5vw, 72px);
   align-items: center;
   min-height: 92vh;
@@ -2649,7 +2658,8 @@ h1 {
 .score-board {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(180px, 0.42fr) minmax(300px, 1fr);
+  /* col2 must shrink so the board never forces the grid past the frame. */
+  grid-template-columns: minmax(160px, 0.42fr) minmax(0, 1fr);
   gap: clamp(18px, 2.6vw, 32px);
   align-items: stretch;
 }
@@ -2773,6 +2783,12 @@ h1 {
   }
 
   .score-board {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stack the artist wall at the same breakpoint as its sibling sections so it
+     never runs a cramped two-column layout in the 920–1080px band. */
+  .artists-section {
     grid-template-columns: 1fr;
   }
 }
