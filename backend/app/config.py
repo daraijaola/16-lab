@@ -17,7 +17,7 @@ GATEWAY_BASE_URL: str = os.getenv(
 ).rstrip("/")
 GATEWAY_KEY: str = os.getenv("GATEWAY_KEY", "")
 DECODE_MODEL: str = os.getenv("DECODE_MODEL", "claude-opus-4-8")
-CORRECT_MODEL: str = os.getenv("CORRECT_MODEL", "claude-haiku-4-5")
+CORRECT_MODEL: str = os.getenv("CORRECT_MODEL", "claude-opus-4-8")
 ANTHROPIC_VERSION: str = os.getenv("ANTHROPIC_VERSION", "2023-06-01")
 
 MOCK_MODE: bool = _bool("MOCK_MODE")

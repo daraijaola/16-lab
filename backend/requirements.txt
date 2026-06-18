@@ -3,3 +3,9 @@ uvicorn[standard]==0.34.0
 httpx==0.28.1
 pydantic==2.10.4
 pronouncing==0.2.0
+
+# og:image generation (tools/make_og.py)
+Pillow==12.2.0
+
+# tests
+pytest==9.1.0

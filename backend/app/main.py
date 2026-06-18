@@ -22,6 +22,7 @@ from . import (
     llm,
     musixmatch,
     pipeline,
+    ratelimit,
     scoreboard,
     scoring,
     spotify,
@@ -90,7 +91,8 @@ class DecodeRequest(BaseModel):
 
 
 @api.post("/decode/bar")
-def decode_bar(req: DecodeRequest):
+def decode_bar(req: DecodeRequest, request: Request):
+    ratelimit.check(request, "decode", 45, 60)
     try:
         track = req.track.model_dump() if req.track else None
         return decode.decode_bar(req.lines, req.target, track).model_dump()
@@ -223,7 +225,8 @@ class DepthRequest(BaseModel):
 
 
 @api.post("/depth")
-def depth_score(req: DepthRequest):
+def depth_score(req: DepthRequest, request: Request):
+    ratelimit.check(request, "depth", 30, 60)
     if not req.trackId or not req.lines:
         raise HTTPException(400, "trackId and lines required")
     try:
@@ -255,7 +258,8 @@ class CompareRequest(BaseModel):
 
 
 @api.post("/compare")
-def compare_tracks(req: CompareRequest):
+def compare_tracks(req: CompareRequest, request: Request):
+    ratelimit.check(request, "compare", 20, 60)
     return compare.compare(req.a.model_dump(), req.b.model_dump())
 
 
@@ -292,7 +296,8 @@ def _sweep_uploads() -> None:
 
 
 @api.post("/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(request: Request, file: UploadFile = File(...)):
+    ratelimit.check(request, "upload", 6, 600)
     ctype = file.content_type or ""
     ext = os.path.splitext(file.filename or "")[1].lower().lstrip(".")
     if not (ctype.startswith("audio/") or ext in _AUDIO_EXT):
