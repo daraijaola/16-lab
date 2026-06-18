@@ -2,9 +2,19 @@
 
 Uses the LLM gateway when a key is present; otherwise returns a clearly
 labelled mock so the API is exercisable with no keys at all.
+
+CONSISTENCY + COST: the same bar in the same context returns the same decode on
+every tap, and a cache hit never calls the model. We cache keyed on a hash of
+(target index + normalized lyric block + artist/title). PRIVACY: like the depth
+cache, we store ONLY our derived output (meaning/wordplay/refs/cultural) — the
+lyric hash is the key, the lyric text itself is never persisted.
 """
 
+import hashlib
 import json
+import re
+import threading
+from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -49,6 +59,58 @@ class BarDecode(BaseModel):
     wordplay: str
     references: list[str] = Field(default_factory=list)
     cultural: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Cache — sha1(target + "\n" + normalized lyrics + "\n" + artist/title)
+# Persistent JSON + in-process dict, write-through. Stores ONLY our decode
+# output, never lyric text. Mirrors depth.py.
+# ---------------------------------------------------------------------------
+
+_WS = re.compile(r"\s+")
+_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "decode_cache.json"
+_lock = threading.Lock()
+
+
+def _normalize(lines: list[str]) -> str:
+    return _WS.sub(" ", "\n".join(lines)).strip().lower()
+
+
+def cache_key(lines: list[str], target: int, track: dict | None) -> str:
+    track = track or {}
+    who = f"{(track.get('title') or '').strip()}|{(track.get('artist') or '').strip()}".lower()
+    raw = f"{target}\n{_normalize(lines)}\n{who}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()
+
+
+def _load_cache() -> dict:
+    try:
+        with open(_CACHE_PATH, encoding="utf-8") as fh:
+            data = json.load(fh)
+            return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, ValueError, OSError):
+        return {}
+
+
+_cache: dict = _load_cache()
+
+
+def cache_get(key: str) -> dict | None:
+    return _cache.get(key)
+
+
+def cache_put(key: str, result: dict) -> None:
+    with _lock:
+        _cache[key] = result
+        try:
+            _CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            tmp = _CACHE_PATH.with_suffix(".json.tmp")
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(_cache, fh, ensure_ascii=False)
+            tmp.replace(_CACHE_PATH)
+        except OSError:
+            # In-process dict still holds it; persistence is best-effort.
+            pass
 
 
 def _extract_json(text: str) -> dict:
@@ -119,6 +181,11 @@ def decode_bar(lines: list[str], target: int, track: dict | None = None) -> BarD
     if not config.llm_live():
         return _mock(lines[target].strip())
 
+    key = cache_key(lines, target, track)
+    hit = cache_get(key)
+    if hit is not None:
+        return BarDecode(**hit)
+
     user = _build_prompt(lines, target, track)
 
     last_err: Exception | None = None
@@ -128,7 +195,9 @@ def decode_bar(lines: list[str], target: int, track: dict | None = None) -> BarD
             system=SYSTEM, user=prompt, model=config.DECODE_MODEL, max_tokens=900
         )
         try:
-            return BarDecode(**_extract_json(out["text"]))
+            result = BarDecode(**_extract_json(out["text"]))
+            cache_put(key, result.model_dump())
+            return result
         except (ValueError, ValidationError, json.JSONDecodeError) as exc:
             last_err = exc
     raise llm.LLMError(f"could not parse decode JSON: {last_err}")
