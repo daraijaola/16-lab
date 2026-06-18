@@ -900,9 +900,9 @@ h1 {
 .upload-flow-section {
   position: relative;
   display: grid;
-  /* Same rebalance as .lyrics-demo: give the headline column real room so the
-     search/upload mockup stops floating in a lopsided, mostly-empty layout. */
-  grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1.08fr);
+  /* Keep this ratio fixed: .demo-cursor click path uses px offsets
+     calibrated to this panel width — changing it desyncs the clicks. */
+  grid-template-columns: minmax(340px, 0.72fr) minmax(0, 1.28fr);
   gap: clamp(30px, 5vw, 72px);
   align-items: center;
   min-height: 94vh;
