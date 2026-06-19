@@ -9,13 +9,22 @@ so the existing decode view renders it with zero new UI.
 
 import threading
 
-from . import correct, jobs, matcher, scribe
+from . import bars, correct, jobs, matcher, scribe
+from .lalal_helper import isolate_vocals
 
 MAX_DURATION = 420.0  # seconds (~7 min cap; measured from the transcript)
 
 
 def process(job_id: str, audio_path: str) -> None:
     try:
+        jobs.set_stage(job_id, "isolating")
+        vocal_stem_url = isolate_vocals(audio_path)
+
+        if vocal_stem_url:
+            audio_for_transcription = vocal_stem_url
+        else:
+            audio_for_transcription = audio_path
+            
         jobs.set_stage(job_id, "transcribing")
         words = scribe.transcribe(audio_path, keyterms=correct.SLANG_TERMS)
         lines = scribe.chunk_lines(words)
@@ -29,6 +38,7 @@ def process(job_id: str, audio_path: str) -> None:
 
         jobs.set_stage(job_id, "correcting")
         lines = correct.correct_lines(lines)
+        lines = bars.shape_bars(lines)
 
         jobs.set_stage(job_id, "matching")
         m = matcher.match(lines)

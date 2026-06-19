@@ -15,7 +15,7 @@ import time
 import uuid
 from pathlib import Path
 
-STAGES = ("uploaded", "transcribing", "correcting", "matching", "done", "error")
+STAGES = ("uploaded", "isolating", "transcribing", "correcting", "matching", "done", "error")
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 _STORE = _DATA_DIR / "jobs.json"
