@@ -16,7 +16,7 @@
     <meta property="og:title" content="16 Lab — Overview" />
     <meta property="og:description" content="Search any track or drop a freestyle. 16 Lab returns lyrics, bar-by-bar meaning, and craft + depth scores." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://16labs.xyz/lab.html" />
+    <meta property="og:url" content="https://16labs.xyz/lab" />
     <meta property="og:image" content="https://16labs.xyz/assets/og-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -28,18 +28,18 @@
   <body>
     <div class="lab-shell" data-screen-label="Overview">
       <header class="lab-topbar" aria-label="App header">
-        <a class="brand" href="./index.html">
+        <a class="brand" href="/">
           <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
           <span><strong>16</strong>Lab</span>
         </a>
 
         <nav class="lab-nav" aria-label="App navigation">
-          <a href="./lab.html" aria-current="page">Overview</a>
-          <a href="./decodes.html">Decodes</a>
-          <a href="./scores.html">Scores</a>
+          <a href="/lab" aria-current="page">Overview</a>
+          <a href="/decodes">Decodes</a>
+          <a href="/scores">Scores</a>
         </nav>
 
-        <a class="back-link" href="./index.html">
+        <a class="back-link" href="/">
           <span aria-hidden="true">&#8598;</span>
           Back to site
         </a>
@@ -92,7 +92,7 @@
           <header class="recents-head">
             <h2>Recent decodes</h2>
             <div class="recents-head-actions">
-              <a class="view-all" href="./decodes.html">View all <span aria-hidden="true">&rarr;</span></a>
+              <a class="view-all" href="/decodes">View all <span aria-hidden="true">&rarr;</span></a>
             </div>
           </header>
 
@@ -134,7 +134,7 @@
         form.addEventListener("submit", function (e) {
           e.preventDefault();
           var q = (input.value || "").trim();
-          window.location.href = "./results.html" + (q ? "?q=" + encodeURIComponent(q) : "");
+          window.location.href = "/results" + (q ? "?q=" + encodeURIComponent(q) : "");
         });
 
         /* ── Recent decodes — real, from this device's board (scope=mine) ── */
@@ -147,8 +147,8 @@
           var artist=e.artist||(e.source==="freestyle"?"You":"Unknown artist");
           var score=(typeof e.overall==="number")?e.overall:(typeof e.technical==="number"?e.technical:null);
           var href=e.source==="freestyle"
-            ? "./decode.html?upload="+encodeURIComponent(String(e.id).replace(/^upload-/,""))
-            : "./decode.html?id="+encodeURIComponent(e.id);
+            ? "/decode?upload="+encodeURIComponent(String(e.id).replace(/^upload-/,""))
+            : "/decode?id="+encodeURIComponent(e.id);
           var art=e.coverUrl
             ? '<span class="card-art"><img src="'+_esc(e.coverUrl)+'" alt="'+_esc(title)+' artwork" onerror="this.parentNode.classList.add(\'cover-ph\',\'is-mono\');this.parentNode.textContent=\''+_esc(_ini(title||artist))+'\'" /></span>'
             : '<span class="card-art is-mono">'+_esc(_ini(title||artist))+'</span>';
@@ -252,7 +252,7 @@
                 setStage(s.stage);
                 if (s.stage === "done") {
                   clearInterval(iv);
-                  window.location.href = "./decode.html?upload=" + encodeURIComponent(jobId);
+                  window.location.href = "/decode?upload=" + encodeURIComponent(jobId);
                 } else if (s.stage === "error") {
                   clearInterval(iv); pipeFail(s.error);
                 }

@@ -16,7 +16,7 @@
     <meta property="og:title" content="16 Lab — Search results" />
     <meta property="og:description" content="Search results for any track, artist, or freestyle. Pick a track to decode it bar by bar." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://16labs.xyz/results.html" />
+    <meta property="og:url" content="https://16labs.xyz/results" />
     <meta property="og:image" content="https://16labs.xyz/assets/og-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -28,18 +28,18 @@
   <body>
     <div class="lab-shell" data-screen-label="Search results">
       <header class="lab-topbar" aria-label="App header">
-        <a class="brand" href="./index.html">
+        <a class="brand" href="/">
           <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
           <span><strong>16</strong>Lab</span>
         </a>
 
         <nav class="lab-nav" aria-label="App navigation">
-          <a href="./lab.html">Overview</a>
-          <a href="./decodes.html">Decodes</a>
-          <a href="./scores.html">Scores</a>
+          <a href="/lab">Overview</a>
+          <a href="/decodes">Decodes</a>
+          <a href="/scores">Scores</a>
         </nav>
 
-        <a class="back-link" href="./lab.html">
+        <a class="back-link" href="/lab">
           <span aria-hidden="true">&#8598;</span>
           Back to search
         </a>
@@ -137,7 +137,7 @@
             <p class="empty-line">No tracks match &ldquo;<span id="emptyQuery">xyzzy</span>&rdquo; &mdash; try a different spelling, or drop the audio instead.</p>
             <div class="empty-actions">
               <button class="empty-action empty-action-search" type="button">Edit search</button>
-              <a class="empty-action empty-action-upload" href="./lab.html#upload">
+              <a class="empty-action empty-action-upload" href="/lab#upload">
                 <span class="up-arrow" aria-hidden="true"></span>
                 Drop a freestyle
               </a>
@@ -177,7 +177,7 @@
         }
 
         function rowHTML(t) {
-          var href = "./decode.html?id=" + encodeURIComponent(t.id);
+          var href = "/decode?id=" + encodeURIComponent(t.id);
           var art  = t.coverUrl
             ? '<span class="result-art"><img src="'+esc(t.coverUrl)+'" alt="'+esc(t.title)+' artwork" loading="lazy" /></span>'
             : '<span class="result-art cover-ph" aria-hidden="true"></span>';
@@ -223,7 +223,7 @@
           e.preventDefault();
           var newQ = (input.value || "").trim();
           if (!newQ) return;
-          window.location.href = "./results.html?q=" + encodeURIComponent(newQ);
+          window.location.href = "/results?q=" + encodeURIComponent(newQ);
         });
 
         // Empty-state edit button

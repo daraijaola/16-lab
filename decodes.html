@@ -16,7 +16,7 @@
     <meta property="og:title" content="16 Lab — Your decodes" />
     <meta property="og:description" content="Your library of decoded tracks and freestyles, with scores." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://16labs.xyz/decodes.html" />
+    <meta property="og:url" content="https://16labs.xyz/decodes" />
     <meta property="og:image" content="https://16labs.xyz/assets/og-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -28,18 +28,18 @@
   <body>
     <div class="lab-shell" data-screen-label="Decodes">
       <header class="lab-topbar" aria-label="App header">
-        <a class="brand" href="./index.html">
+        <a class="brand" href="/">
           <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
           <span><strong>16</strong>Lab</span>
         </a>
 
         <nav class="lab-nav" aria-label="App navigation">
-          <a href="./lab.html">Overview</a>
-          <a href="./decodes.html" aria-current="page">Decodes</a>
-          <a href="./scores.html">Scores</a>
+          <a href="/lab">Overview</a>
+          <a href="/decodes" aria-current="page">Decodes</a>
+          <a href="/scores">Scores</a>
         </nav>
 
-        <a class="back-link" href="./index.html">
+        <a class="back-link" href="/">
           <span aria-hidden="true">&#8598;</span>
           Back to site
         </a>
@@ -88,8 +88,8 @@
         <div class="recents-empty" id="decodesEmpty" hidden>
           <p id="emptyMsg">Nothing decoded yet &mdash; your first bar is one search away.</p>
           <div class="empty-actions">
-            <a class="empty-action empty-action-search" href="./lab.html">Search a track</a>
-            <a class="empty-action empty-action-upload" href="./lab.html">Drop a freestyle</a>
+            <a class="empty-action empty-action-search" href="/lab">Search a track</a>
+            <a class="empty-action empty-action-upload" href="/lab">Drop a freestyle</a>
           </div>
         </div>
       </main>
@@ -132,8 +132,8 @@
             scoreNull: ov == null && tech == null,
             coverUrl: e.coverUrl || null,
             href: e.source === "freestyle"
-              ? "./decode.html?upload=" + encodeURIComponent(String(e.id).replace(/^upload-/, ""))
-              : "./decode.html?id=" + encodeURIComponent(e.id),
+              ? "/decode?upload=" + encodeURIComponent(String(e.id).replace(/^upload-/, ""))
+              : "/decode?id=" + encodeURIComponent(e.id),
             ts: e.ts || 0
           };
         }
