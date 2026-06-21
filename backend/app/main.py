@@ -158,7 +158,7 @@ def spotify_callback(request: Request, code: str = "", state: str = "", error: s
     # Figure out which track page the user came from (stored in cookie)
     # and send them back there; default to decode page.
     track_id = request.cookies.get("16lab_track", "")
-    back = f"/decode.html?id={track_id}" if track_id else "/decode.html"
+    back = f"/decode?id={track_id}" if track_id else "/decode"
     r = RedirectResponse(url=back, status_code=302)
     r.set_cookie(
         key=spotify._COOKIE,

@@ -16,7 +16,7 @@
     <meta property="og:title" content="16 Lab — Scores" />
     <meta property="og:description" content="Live global leaderboard — every track and freestyle decoded on 16 Lab, ranked on Overall, Technical craft and Depth lyricism." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://16labs.xyz/scores.html" />
+    <meta property="og:url" content="https://16labs.xyz/scores" />
     <meta property="og:image" content="https://16labs.xyz/assets/og-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -28,18 +28,18 @@
   <body>
     <div class="lab-shell" data-screen-label="Scores">
       <header class="lab-topbar" aria-label="App header">
-        <a class="brand" href="./index.html">
+        <a class="brand" href="/">
           <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
           <span><strong>16</strong>Lab</span>
         </a>
 
         <nav class="lab-nav" aria-label="App navigation">
-          <a href="./lab.html">Overview</a>
-          <a href="./decodes.html">Decodes</a>
-          <a href="./scores.html" aria-current="page">Scores</a>
+          <a href="/lab">Overview</a>
+          <a href="/decodes">Decodes</a>
+          <a href="/scores" aria-current="page">Scores</a>
         </nav>
 
-        <a class="back-link" href="./index.html">
+        <a class="back-link" href="/">
           <span aria-hidden="true">&#8598;</span>
           Back to site
         </a>
@@ -216,8 +216,8 @@
         function jobIdOf(e) { return String(e.id).replace(/^upload-/, ""); }
         function rowHref(e) {
           return e.source === "freestyle"
-            ? "./decode.html?upload=" + encodeURIComponent(jobIdOf(e))
-            : "./decode.html?id=" + encodeURIComponent(e.id);
+            ? "/decode?upload=" + encodeURIComponent(jobIdOf(e))
+            : "/decode?id=" + encodeURIComponent(e.id);
         }
         function insight(e) {
           var t = num(e.technical), d = num(e.depth);
@@ -297,7 +297,7 @@
           lbList.hidden = false;
         }
 
-        var DECODE_CTA = '<a class="btn-pill" href="./lab.html">Decode a track</a>';
+        var DECODE_CTA = '<a class="btn-pill" href="/lab">Decode a track</a>';
 
         function loadLeaderboard() {
           var qs = "?window=" + state.window + "&scope=" + state.scope + "&sort=" + state.sort + "&limit=300";

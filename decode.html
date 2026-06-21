@@ -18,7 +18,7 @@
     <meta property="og:title" content="16 Lab — Decode" />
     <meta property="og:description" content="Tap any bar to decode its meaning, wordplay, and references — with or without audio." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://16labs.xyz/decode.html" />
+    <meta property="og:url" content="https://16labs.xyz/decode" />
     <meta property="og:image" content="https://16labs.xyz/assets/og-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -30,18 +30,18 @@
   <body class="decode-body-page">
     <div class="lab-shell" data-screen-label="Decode">
       <header class="lab-topbar" aria-label="App header">
-        <a class="brand" href="./index.html">
+        <a class="brand" href="/">
           <img src="./assets/16-lab-logo.svg" alt="16 Lab" />
           <span><strong>16</strong>Lab</span>
         </a>
 
         <nav class="lab-nav" aria-label="App navigation">
-          <a href="./lab.html">Overview</a>
-          <a href="./decodes.html">Decodes</a>
-          <a href="./scores.html">Scores</a>
+          <a href="/lab">Overview</a>
+          <a href="/decodes">Decodes</a>
+          <a href="/scores">Scores</a>
         </nav>
 
-        <a class="back-link" href="./results.html">
+        <a class="back-link" href="/results">
           <span aria-hidden="true">&#8598;</span>
           Results
         </a>
@@ -50,7 +50,7 @@
       <main class="lab-main decode-main">
         <div class="lane-row">
           <div class="decode-crumb">
-            <a href="./results.html">Results</a>
+            <a href="/results">Results</a>
             <span aria-hidden="true">/</span>
             <strong>Decode</strong>
           </div>
@@ -297,7 +297,7 @@
             '<div class="decode-empty" style="max-width:520px;margin:8vh auto 0;text-align:center;padding:2rem 1.25rem">'
             + '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.02em">Nothing to decode yet</div>'
             + '<p style="margin:.75rem 0 1.5rem;color:var(--ink-60);font-weight:600;line-height:1.5">Search a track or upload a freestyle and 16 Lab will break down the bars — rhyme, flow and lyricism.</p>'
-            + '<a class="btn-pill" href="./lab.html" style="display:inline-flex;align-items:center;padding:11px 20px;border:2px solid var(--border);border-radius:999px;background:var(--orange);color:var(--cream);font-weight:700;text-decoration:none;box-shadow:3px 4px 0 rgba(6,19,31,.85)">Go to the lab</a>'
+            + '<a class="btn-pill" href="/lab" style="display:inline-flex;align-items:center;padding:11px 20px;border:2px solid var(--border);border-radius:999px;background:var(--orange);color:var(--cream);font-weight:700;text-decoration:none;box-shadow:3px 4px 0 rgba(6,19,31,.85)">Go to the lab</a>'
             + '</div>';
         }
 
@@ -758,7 +758,7 @@
 /* ── Load catalog track from API ─────────────────── */
         function loadCatalogTrack() {
           if(!trackId){
-            head.innerHTML='<div style="padding:1.5rem;opacity:.6">No track selected — <a href="./lab.html">search one</a>.</div>';
+            head.innerHTML='<div style="padding:1.5rem;opacity:.6">No track selected — <a href="/lab">search one</a>.</div>';
             scroll.innerHTML=overview.innerHTML=""; return;
           }
           showLoading();
@@ -861,7 +861,7 @@
             b.className="match-ribbon is-matched";
             b.innerHTML='<span class="ribbon-ico" aria-hidden="true"></span>'+
               '<span class="ribbon-text">Identified: <strong>'+esc(d.match.title)+'</strong> by '+esc(d.match.artist)+'</span>'+
-              (d.match.trackId?'<a class="ribbon-link" href="./decode.html?id='+encodeURIComponent(d.match.trackId)+'">Open catalog version</a>':'');
+              (d.match.trackId?'<a class="ribbon-link" href="/decode?id='+encodeURIComponent(d.match.trackId)+'">Open catalog version</a>':'');
           } else {
             b.className="match-ribbon is-uncharted";
             b.innerHTML='<span class="ribbon-ico" aria-hidden="true"></span>'+
@@ -1233,11 +1233,11 @@
           var back=document.querySelector(".back-link");
           var crumb=document.querySelector(".decode-crumb");
           if(uploadId){
-            if(back){ back.href="./lab.html"; back.innerHTML='<span aria-hidden="true">&#8598;</span> Overview'; }
-            if(crumb) crumb.innerHTML='<a href="./lab.html">Overview</a><span aria-hidden="true">/</span><strong>Freestyle</strong>';
+            if(back){ back.href="/lab"; back.innerHTML='<span aria-hidden="true">&#8598;</span> Overview'; }
+            if(crumb) crumb.innerHTML='<a href="/lab">Overview</a><span aria-hidden="true">/</span><strong>Freestyle</strong>';
           } else if(!trackId){
-            if(back){ back.href="./lab.html"; back.innerHTML='<span aria-hidden="true">&#8598;</span> Overview'; }
-            if(crumb) crumb.innerHTML='<a href="./lab.html">Overview</a><span aria-hidden="true">/</span><strong>Decode</strong>';
+            if(back){ back.href="/lab"; back.innerHTML='<span aria-hidden="true">&#8598;</span> Overview'; }
+            if(crumb) crumb.innerHTML='<a href="/lab">Overview</a><span aria-hidden="true">/</span><strong>Decode</strong>';
           }
           /* Catalog track keeps the default "Results" back link & breadcrumb. */
         }
