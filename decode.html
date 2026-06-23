@@ -573,7 +573,9 @@
         var trackEl=document.getElementById("playerTrack");
 
         function paintPlayer() {
-          var pct=(state.cur/TOTAL_SECONDS)*100;
+          var total=TOTAL_SECONDS||state.total||0;
+          var pct=total?(state.cur/total)*100:0;
+          pct=Math.max(0,Math.min(100,pct));
           fill.style.width=pct+"%"; knob.style.left=pct+"%";
           curEl.textContent=fmt(state.cur);
           trackEl.setAttribute("aria-valuenow",Math.round(state.cur));
@@ -682,7 +684,7 @@
         /* Spotify connect → OAuth */
         function _spRemembered(){ try{ return localStorage.getItem("16lab_sp_on")==="1"; }catch(e){ return false; } }
         spotifyConnect.addEventListener("click",function(){
-          if(trackId) document.cookie="16lab_track="+encodeURIComponent(trackId)+";path=/;max-age=600;SameSite=Lax;Secure";
+          if(trackId) document.cookie="16lab_track="+encodeURIComponent(trackId)+";path=/;max-age=600;SameSite=Lax"+(location.protocol==="https:"?";Secure":"");
           /* Mark that auto-play should fire once we return from OAuth (not on every load) */
           try{ sessionStorage.setItem("16lab_sp_just","1"); }catch(e){}
           window.location.href="/api/spotify/login";
@@ -693,6 +695,37 @@
           playBtn.classList.toggle("is-playing",on);
           playBtn.setAttribute("aria-label",on?"Pause":"Play");
           var sp=playBtn.querySelector("span"); if(sp) sp.className=on?"ico-pause":"ico-play";
+        }
+        function setSpotifyPlaying(on){
+          state.playing=!!on;
+          paintPlayBtn(state.playing);
+          if(state.playing){
+            if(!_smoothTick||!_karaokeTimer) startKaraokeSync();
+            _spBase=state.cur; _spAt=Date.now();
+          } else {
+            _spBase=state.cur; _spAt=Date.now();
+          }
+        }
+        function syncSpotifyNow(sp, expectedTrackId){
+          if(!sp||!sp.connected) return false;
+          if(expectedTrackId&&sp.trackId&&sp.trackId!==expectedTrackId) return false;
+          if(sp.durationMs){
+            TOTAL_SECONDS=sp.durationMs/1000; state.total=TOTAL_SECONDS;
+            playerTotalEl.textContent=fmt(TOTAL_SECONDS);
+            trackEl.setAttribute("aria-valuemax",Math.round(TOTAL_SECONDS)||1);
+          }
+          if(typeof sp.progressMs==="number"){
+            state.cur=sp.progressMs/1000;
+            _spBase=state.cur; _spAt=Date.now();
+            paintPlayer(); activeKaraoke();
+          }
+          return true;
+        }
+        function refreshSpotifyClock(expectedTrackId){
+          fetch("/api/spotify/now")
+            .then(function(r){return r.ok?r.json():Promise.reject();})
+            .then(function(sp){ syncSpotifyNow(sp, expectedTrackId); })
+            .catch(function(){});
         }
         playBtn.addEventListener("click",function(e){
           e.stopImmediatePropagation();
@@ -706,11 +739,7 @@
           if(state.connected&&d&&d.spotifyId){
             _ignorePlayStateUntil=Date.now()+3000;
             if(state.playing){
-              _spBase=state.cur;
-              state.playing=false;
-              playBtn.classList.remove("is-playing");
-              playBtn.setAttribute("aria-label","Play");
-              playBtn.querySelector("span").className="ico-play";
+              setSpotifyPlaying(false);
               fetch("/api/spotify/pause",{method:"PUT"}).catch(function(){});
             } else {
               /* Non-optimistic: only flip UI after Spotify confirms */
@@ -721,12 +750,9 @@
               .then(function(r){return r.ok?r.json():Promise.reject("http");})
               .then(function(res){
                 if(res.ok){
-                  _spBase=state.cur; _spAt=Date.now();
-                  state.playing=true;
                   playerNote.hidden=true;
-                  playBtn.classList.add("is-playing");
-                  playBtn.setAttribute("aria-label","Pause");
-                  playBtn.querySelector("span").className="ico-pause";
+                  setSpotifyPlaying(true);
+                  setTimeout(function(){ refreshSpotifyClock(d.spotifyId); },600);
                 } else {
                   showPlayerError(res, d.spotifyId);
                 }
@@ -740,6 +766,7 @@
         /* ── Lane switching ──────────────────────────────────────── */
         function renderLane() {
           if(state.timer){clearInterval(state.timer);state.timer=null;}
+          stopKaraokeSync();
           if(_uploadAudio){ try{_uploadAudio.pause();}catch(e){} }
           state.playing=false;state.cur=0;state.selected=null;state.connected=false;state.token++;
           closeDecode(); _lastKaraokeEl=null;
@@ -888,9 +915,8 @@
               /* Sync play state BEFORE renderDock so the button renders correctly */
               if(sp.isPlaying&&sp.trackId===d.spotifyId){
                 /* Already on this track — sync position */
+                syncSpotifyNow(sp, d.spotifyId);
                 state.playing=true;
-                _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
-                if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
               } else if(justConnected&&d.spotifyId){
                 /* Auto-play ONLY right after the OAuth round-trip, not on every reload */
                 try{ sessionStorage.removeItem("16lab_sp_just"); }catch(e){}
@@ -910,11 +936,9 @@
           .then(function(r){return r.ok?r.json():Promise.reject();})
           .then(function(res){
             if(res.ok){
-              state.playing=true; _spAt=Date.now();
               playerNote.hidden=true;
-              playBtn.classList.add("is-playing");
-              playBtn.setAttribute("aria-label","Pause");
-              playBtn.querySelector("span").className="ico-pause";
+              setSpotifyPlaying(true);
+              setTimeout(function(){ refreshSpotifyClock(spotifyId); },600);
             } else if(res.noDevice&&attempt<1){
               /* Spotify app may need a moment after OAuth redirect — retry once */
               setTimeout(function(){ _tryAutoPlay(spotifyId,1); },1500);
@@ -943,15 +967,12 @@
               .then(function(r){return r.ok?r.json():Promise.reject();})
               .then(function(sp){
                 if(!sp.connected) return;
-                if(sp.isPlaying){
-                  _spBase=(sp.progressMs||0)/1000; _spAt=Date.now();
-                  if(sp.durationMs) TOTAL_SECONDS=sp.durationMs/1000;
+                var d=DATA[state.lane];
+                if(sp.isPlaying&&(!d||!d.spotifyId||sp.trackId===d.spotifyId)){
+                  syncSpotifyNow(sp, d&&d.spotifyId);
                   /* Detect external play (user resumed from Spotify app) */
                   if(!state.playing&&Date.now()>_ignorePlayStateUntil){
-                    state.playing=true;
-                    playBtn.classList.add("is-playing");
-                    playBtn.setAttribute("aria-label","Pause");
-                    playBtn.querySelector("span").className="ico-pause";
+                    setSpotifyPlaying(true);
                   }
                 }
               })
